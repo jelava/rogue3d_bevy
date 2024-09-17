@@ -4,4 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-bevy = "0.14.1"
+bevy = "0.14"
+bevy_rand = { version = "0.7", features = ["wyrand"] }
+rand = "0.8"

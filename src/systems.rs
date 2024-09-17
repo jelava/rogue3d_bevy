@@ -13,23 +13,27 @@ pub fn generate_blocks(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let texture_handle = asset_server.load_with_settings(
-        "textures/testgrid.png",
-        |settings: &mut ImageLoaderSettings| settings.sampler = ImageSampler::nearest(),
-    );
+    // let texture_handle = asset_server.load_with_settings(
+    //     "textures/testgrid.png",
+    //     |settings: &mut ImageLoaderSettings| settings.sampler = ImageSampler::nearest(),
+    // );
+
+    let texture_handle = asset_server.load("textures/testgrid_big.png");
 
     let mesh_handle = meshes.add(Cuboid::default());
 
     let material_handle = materials.add(StandardMaterial {
         base_color_texture: Some(texture_handle.clone()),
-        // unlit: true,
+        unlit: true,
+        // perceptual_roughness: 1.0,
+        // reflectance: 0.0,
         ..default()
     });
 
     for x in -10..11 {
         for z in -10..11 {
             commands.spawn((
-                GridPosition::SingleBlock(x, -1, z),
+                GridPosition::SingleBlock(IVec3::new(x, -1, z)),
                 Collider,
                 PbrBundle {
                     mesh: mesh_handle.clone(),
@@ -41,8 +45,21 @@ pub fn generate_blocks(
         }
     }
 
+    for z in -3..4 {
+        commands.spawn((
+            GridPosition::SingleBlock(IVec3::new(-3, 0, z)),
+            Collider,
+            PbrBundle {
+                mesh: mesh_handle.clone(),
+                material: material_handle.clone(),
+                transform: Transform::from_xyz(-3.0, 0.0, z as f32),
+                ..default()
+            },
+        ));
+    }
+
     commands.spawn(PointLightBundle {
-        transform: Transform::from_xyz(0.0, 2.0, 3.0),
+        transform: Transform::from_xyz(0.5, 2.5, 3.5),
         point_light: PointLight {
             shadows_enabled: true,
             ..default()
@@ -66,21 +83,27 @@ pub fn spawn_creatures(
 
     let player_material_handle = materials.add(StandardMaterial {
         base_color_texture: Some(texture_handle.clone()),
-        alpha_mode: AlphaMode::Blend, //AlphaMode::Mask(0.0),
-        // unlit: true,
+        unlit: true,
+        // cull_mode: None,
+        // alpha_mode: AlphaMode::Blend,
+        // perceptual_roughness: 1.0,
+        // reflectance: 0.0,
         ..default()
     });
 
     let npc_material_handle = materials.add(StandardMaterial {
-        base_color: Color::srgb(1.0, 0.25, 0.25),
         base_color_texture: Some(texture_handle.clone()),
-        alpha_mode: AlphaMode::Blend, //AlphaMode::Mask(0.0),
-        // unlit: true,
+        base_color: Color::srgb(1.0, 0.25, 0.25),
+        unlit: true,
+        // cull_mode: None,
+        // alpha_mode: AlphaMode::Blend,
+        // perceptual_roughness: 1.0,
+        // reflectance: 0.0,
         ..default()
     });
 
     commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(0.0, 3.0, 10.0).looking_at(Vec3::ZERO, Vec3::Y),
+        transform: Transform::from_xyz(0.0, 5.0, 10.0).looking_at(Vec3::ZERO, Vec3::Y),
         ..default()
     });
 
@@ -88,7 +111,7 @@ pub fn spawn_creatures(
         Creature,
         PlayerController,
         Name(String::from("Jessie")),
-        GridPosition::SingleBlock(0, 0, 0),
+        GridPosition::SingleBlock(IVec3::new(0, 0, 0)),
         Collider,
         // Billboard,
         PbrBundle {
@@ -102,7 +125,7 @@ pub fn spawn_creatures(
     commands.spawn((
         Creature,
         Name(String::from("Gnorm the gnome")),
-        GridPosition::SingleBlock(5, 0, -2),
+        GridPosition::SingleBlock(IVec3::new(5, 0, -2)),
         Collider,
         // Billboard,
         PbrBundle {
@@ -116,17 +139,28 @@ pub fn spawn_creatures(
 
 // misc tech stuff
 
+pub fn update_camera(
+    mut camera_transform_query: Query<&mut Transform, With<Camera>>,
+    player_transform_query: Query<&Transform, (With<PlayerController>, Without<Camera>)>,
+) {
+    if let (Ok(mut camera_transform), Ok(player_transform)) = (
+        camera_transform_query.get_single_mut(),
+        player_transform_query.get_single(),
+    ) {
+        // TODO: don't hardcode camera offset, come up with better approach to handling camera in general
+        camera_transform.translation = player_transform.translation + Vec3::new(0.0, 5.0, 10.0);
+    }
+}
+
 pub fn update_billboard_transforms(
     camera_transform_query: Query<&Transform, With<Camera>>,
     mut billboards_query: Query<&mut Transform, (With<Billboard>, Without<Camera>)>,
 ) {
-    use std::f32::consts::PI;
+    // use std::f32::consts::PI;
 
-    let camera_transform = camera_transform_query.single();
-
-    for mut transform in &mut billboards_query {
-        *transform = transform
-            .looking_at(camera_transform.translation, camera_transform.up())
-            .with_rotation(Quat::from_rotation_z(2.0 * PI));
+    if let Ok(camera_transform) = camera_transform_query.get_single() {
+        for mut transform in &mut billboards_query {
+            transform.look_to(camera_transform.forward(), camera_transform.up());
+        }
     }
 }

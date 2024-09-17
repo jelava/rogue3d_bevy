@@ -1,8 +1,7 @@
 use std::{collections::HashMap, hash::Hash};
 
 use bevy::{
-    input::keyboard::Key,
-    math::Vec3,
+    math::IVec3,
     prelude::{Event, KeyCode, Resource},
 };
 
@@ -21,7 +20,7 @@ impl<I: Eq + Hash, C> InputMap<I, C> {
 
 #[derive(Event, Copy, Clone)]
 pub enum PlayerInputCommand {
-    Walk(Vec3),
+    Walk(IVec3),
 }
 
 pub type PlayerInputMap = InputMap<KeyCode, PlayerInputCommand>;
@@ -33,11 +32,13 @@ impl Default for PlayerInputMap {
 
         Self {
             map: HashMap::from([
-                (ArrowUp, Walk(-Vec3::Z)),
-                (ArrowDown, Walk(Vec3::Z)),
-                (ArrowRight, Walk(Vec3::X)),
-                (ArrowLeft, Walk(-Vec3::X)),
+                (ArrowUp, Walk(-IVec3::Z)),
+                (ArrowDown, Walk(IVec3::Z)),
+                (ArrowRight, Walk(IVec3::X)),
+                (ArrowLeft, Walk(-IVec3::X)),
             ]),
         }
     }
 }
+
+// pub type CameraInputMap = InputMap<>
