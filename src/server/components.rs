@@ -24,6 +24,13 @@ pub enum GridPosition {
 #[derive(Component)]
 pub struct Collider;
 
+// vision (and eventually other senses)
+
+#[derive(Component)]
+pub struct Vision {
+    pub range: usize
+}
+
 // player specific stuff
 
 #[derive(Component)]

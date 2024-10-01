@@ -17,10 +17,10 @@ pub struct FloorGenerationParams {
 impl Default for FloorGenerationParams {
     fn default() -> Self {
         Self {
-            floor_size: IVec3::new(30, 3, 30),
-            min_room_size: IVec3::new(3, 3, 3),
-            max_room_size: IVec3::new(10, 3, 10),
-            max_num_rooms: 25,
+            floor_size: IVec3::new(100, 3, 100),
+            min_room_size: IVec3::new(5, 3, 5),
+            max_room_size: IVec3::new(30, 3, 30),
+            max_num_rooms: 50,
             // max_room_attempts: 3,
         }
     }
