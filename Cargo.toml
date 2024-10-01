@@ -7,3 +7,4 @@ edition = "2021"
 bevy = "0.14"
 bevy_rand = { version = "0.7", features = ["wyrand"] }
 rand = "0.8"
+uuid = { version = "1.10.0", features = ["v4", "fast-rng"] }

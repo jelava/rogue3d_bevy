@@ -1,11 +1,13 @@
+pub mod systems;
+
 use std::{collections::HashMap, hash::Hash};
 
 use bevy::{
     math::IVec3,
-    prelude::{Event, KeyCode, Resource},
+    prelude::{KeyCode, Resource},
 };
 
-pub mod systems;
+use crate::bridge::PlayerInputCommand;
 
 #[derive(Resource)]
 pub struct InputMap<I: Eq + Hash, C> {
@@ -16,11 +18,6 @@ impl<I: Eq + Hash, C> InputMap<I, C> {
     pub fn get(&self, input: &I) -> Option<&C> {
         self.map.get(input)
     }
-}
-
-#[derive(Event, Copy, Clone)]
-pub enum PlayerInputCommand {
-    Walk(IVec3),
 }
 
 pub type PlayerInputMap = InputMap<KeyCode, PlayerInputCommand>;

@@ -11,9 +11,6 @@ pub struct Creature;
 // pub struct Block;
 
 #[derive(Component)]
-pub struct Collider;
-
-#[derive(Component)]
 pub enum GridPosition {
     SingleBlock(IVec3),
     // VerticalLine(i32, i32),
@@ -24,6 +21,9 @@ pub enum GridPosition {
     // }
 }
 
+#[derive(Component)]
+pub struct Collider;
+
 // player specific stuff
 
 #[derive(Component)]
@@ -31,8 +31,3 @@ pub struct PlayerController;
 
 #[derive(Component)]
 pub struct Name(pub String);
-
-// misc technical stuff
-
-#[derive(Component)]
-pub struct Billboard;

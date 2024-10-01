@@ -19,8 +19,8 @@ impl Default for FloorGenerationParams {
         Self {
             floor_size: IVec3::new(30, 3, 30),
             min_room_size: IVec3::new(3, 3, 3),
-            max_room_size: IVec3::new(12, 3, 12),
-            max_num_rooms: 15,
+            max_room_size: IVec3::new(10, 3, 10),
+            max_num_rooms: 25,
             // max_room_attempts: 3,
         }
     }

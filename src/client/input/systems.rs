@@ -1,9 +1,6 @@
 use bevy::{input::mouse::MouseMotion, prelude::*};
 
-use crate::{
-    components::{Collider, GridPosition, PlayerController},
-    input::{PlayerInputCommand, PlayerInputMap},
-};
+use crate::client::input::{PlayerInputCommand, PlayerInputMap};
 
 pub fn player_kb_input_mapper(
     input_map: Res<PlayerInputMap>,
@@ -17,52 +14,6 @@ pub fn player_kb_input_mapper(
             player_input_events.send(*command);
         }
     }
-}
-
-pub fn handle_player_input(
-    mut player_input_commands: EventReader<PlayerInputCommand>,
-    mut player_transform_query: Query<
-        (&mut GridPosition, &mut Transform),
-        (With<PlayerController>, With<Collider>),
-    >,
-    colliders_query: Query<&GridPosition, (With<Collider>, Without<PlayerController>)>,
-) {
-    use PlayerInputCommand::*;
-
-    let (mut player_grid_pos, mut player_transform) = player_transform_query.single_mut();
-
-    if let Some(command) = player_input_commands.read().next() {
-        match *command {
-            Walk(dir) => match *player_grid_pos {
-                GridPosition::SingleBlock(pos) => {
-                    let updated_pos = pos + dir;
-
-                    if is_block_unoccupied(updated_pos, colliders_query) {
-                        *player_grid_pos = GridPosition::SingleBlock(updated_pos);
-                        player_transform.translation +=
-                            Vec3::new(dir.x as f32, dir.y as f32, dir.z as f32);
-                    }
-                }
-            },
-        }
-    }
-}
-
-fn is_block_unoccupied(
-    pos: IVec3,
-    colliders_query: Query<&GridPosition, (With<Collider>, Without<PlayerController>)>,
-) -> bool {
-    for collider in &colliders_query {
-        match collider {
-            GridPosition::SingleBlock(collider_pos) => {
-                if pos == *collider_pos {
-                    return false;
-                }
-            }
-        }
-    }
-
-    true
 }
 
 // TODO: create input mapper system for camera controls!
