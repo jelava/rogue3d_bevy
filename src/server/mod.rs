@@ -1,7 +1,3 @@
-mod components;
-mod input;
-mod map_gen;
-
 use bevy::prelude::*;
 use bevy_rand::{plugin::EntropyPlugin, prelude::WyRand};
 
@@ -9,6 +5,11 @@ use crate::server::{
     input::handle_player_input,
     map_gen::{systems::*, FloorGenerationParams},
 };
+
+mod components;
+mod input;
+mod map_gen;
+mod senses;
 
 pub struct ServerPlugin;
 

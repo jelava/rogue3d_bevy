@@ -5,8 +5,9 @@ use rand::Rng;
 use crate::{
     bridge::{BlockSpawned, CreatureSpawned, Id},
     server::{
-        components::{Collider, Creature, GridPosition, Name, PlayerController},
+        components::{Collider, Creature, GridPosition, GridShape, Name, PlayerController},
         map_gen::{FloorGenerationParams, SimpleRoom},
+        senses::vision::Vision
     },
 };
 
@@ -66,7 +67,8 @@ pub fn generate_blocks_from_rooms(
 
                     commands.spawn((
                         id,
-                        GridPosition::SingleBlock(pos),
+                        GridPosition(pos),
+                        GridShape::SingleBlock,
                         Collider,
                         // PbrBundle {
                         //     mesh: mesh_handle.clone(),
@@ -138,37 +140,16 @@ pub fn spawn_creatures_in_rooms(
                 rng.gen_range((room.corner1.z + 1)..room.corner2.z),
             );
 
-            // let spawn_coords_vec = Vec3::new(
-            //     spawn_coords.x as f32,
-            //     spawn_coords.y as f32,
-            //     spawn_coords.z as f32,
-            // );
-
             commands.spawn((
                 id,
                 Creature,
                 PlayerController,
                 Name(String::from("Jessie")),
-                GridPosition::SingleBlock(spawn_coords),
+                GridPosition(spawn_coords),
+                GridShape::SingleBlock,
                 Collider,
-                // Billboard,
-                // PbrBundle {
-                //     mesh: mesh_handle.clone(),
-                //     material: player_material_handle.clone(),
-                //     transform: Transform::from_translation(spawn_coords_vec),
-                //     ..default()
-                // },
+                Vision { range: 10 }
             ));
-
-            /*
-            commands.spawn(Camera3dBundle {
-                transform: Transform::from_translation(
-                    spawn_coords_vec + Vec3::new(0.0, 8.0, 10.0),
-                )
-                .looking_at(spawn_coords_vec, Vec3::Y),
-                ..default()
-            });
-            */
 
             spawn_events.send(CreatureSpawned {
                 id,

@@ -106,8 +106,6 @@ pub fn handle_block_spawns(
     for spawn_event in block_spawn_events.read() {
         commands.spawn((
             spawn_event.id,
-            // GridPosition::SingleBlock(pos),
-            // Collider,
             PbrBundle {
                 mesh: mesh_handle.clone(),
                 material: material_handle.clone(),

@@ -5,27 +5,30 @@ use crate::{
     server::components::{Collider, GridPosition, PlayerController},
 };
 
+use super::components::GridShape;
+
 pub fn handle_player_input(
     mut player_input_commands: EventReader<PlayerInputCommand>,
     mut position_updates: EventWriter<PositionUpdate>,
     mut player_position_query: Query<
-        (&mut GridPosition, &Id),
+        (&mut GridPosition, &GridShape, &Id),
         (With<PlayerController>, With<Collider>),
     >,
-    colliders_query: Query<&GridPosition, (With<Collider>, Without<PlayerController>)>,
+    colliders_query: Query<(&GridPosition, &GridShape), (With<Collider>, Without<PlayerController>)>,
 ) {
     use PlayerInputCommand::*;
 
-    let (mut player_grid_pos, id) = player_position_query.single_mut();
+    let (mut player_pos, player_shape, id) = player_position_query.single_mut();
 
     if let Some(command) = player_input_commands.read().next() {
         match *command {
-            Walk(dir) => match *player_grid_pos {
-                GridPosition::SingleBlock(pos) => {
-                    let updated_pos = pos + dir;
+            Walk(dir) => match *player_shape {
+                GridShape::SingleBlock => {
+                    // TODO: .0 is kinda ugly, use destructuring or something?
+                    let updated_pos = player_pos.0 + dir;
 
                     if is_block_unoccupied(updated_pos, colliders_query) {
-                        *player_grid_pos = GridPosition::SingleBlock(updated_pos);
+                        *player_pos = GridPosition(updated_pos);
 
                         position_updates.send(PositionUpdate {
                             id: *id,
@@ -40,11 +43,11 @@ pub fn handle_player_input(
 
 fn is_block_unoccupied(
     pos: IVec3,
-    colliders_query: Query<&GridPosition, (With<Collider>, Without<PlayerController>)>,
+    colliders_query: Query<(&GridPosition, &GridShape), (With<Collider>, Without<PlayerController>)>,
 ) -> bool {
-    for collider in &colliders_query {
-        match collider {
-            GridPosition::SingleBlock(collider_pos) => {
+    for (GridPosition(collider_pos), collider_shape) in &colliders_query {
+        match collider_shape {
+            GridShape::SingleBlock => {
                 if pos == *collider_pos {
                     return false;
                 }

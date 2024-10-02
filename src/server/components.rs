@@ -11,25 +11,15 @@ pub struct Creature;
 // pub struct Block;
 
 #[derive(Component)]
-pub enum GridPosition {
-    SingleBlock(IVec3),
-    // VerticalLine(i32, i32),
-    // HorizontalLine(i32, i32),
-    // BoundingBox {
-    //     lower_bottom_left: (i32, i32, i32),
-    //     dimensions: (i32, i32, i32)
-    // }
+pub struct GridPosition(pub IVec3);
+
+#[derive(Component)]
+pub enum GridShape {
+    SingleBlock
 }
 
 #[derive(Component)]
 pub struct Collider;
-
-// vision (and eventually other senses)
-
-#[derive(Component)]
-pub struct Vision {
-    pub range: usize
-}
 
 // player specific stuff
 
