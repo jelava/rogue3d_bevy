@@ -17,6 +17,11 @@ impl Plugin for BridgePlugin {
     }
 }
 
+///
+#[derive(Component)]
+pub struct ClientSync;
+
+// todo? remove this or at least reduce scope of how it's currently used
 #[derive(Component, Copy, Clone, Debug, Eq, PartialEq)]
 pub struct Id(Uuid);
 

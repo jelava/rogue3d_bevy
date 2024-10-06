@@ -14,7 +14,10 @@ pub fn handle_player_input(
         (&mut GridPosition, &GridShape, &Id),
         (With<PlayerController>, With<Collider>),
     >,
-    colliders_query: Query<(&GridPosition, &GridShape), (With<Collider>, Without<PlayerController>)>,
+    colliders_query: Query<
+        (&GridPosition, &GridShape),
+        (With<Collider>, Without<PlayerController>),
+    >,
 ) {
     use PlayerInputCommand::*;
 
@@ -43,7 +46,10 @@ pub fn handle_player_input(
 
 fn is_block_unoccupied(
     pos: IVec3,
-    colliders_query: Query<(&GridPosition, &GridShape), (With<Collider>, Without<PlayerController>)>,
+    colliders_query: Query<
+        (&GridPosition, &GridShape),
+        (With<Collider>, Without<PlayerController>),
+    >,
 ) -> bool {
     for (GridPosition(collider_pos), collider_shape) in &colliders_query {
         match collider_shape {

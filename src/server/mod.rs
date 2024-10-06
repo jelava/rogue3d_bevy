@@ -4,6 +4,7 @@ use bevy_rand::{plugin::EntropyPlugin, prelude::WyRand};
 use crate::server::{
     input::handle_player_input,
     map_gen::{systems::*, FloorGenerationParams},
+    senses::vision::update_vision,
 };
 
 mod components;
@@ -25,6 +26,6 @@ impl Plugin for ServerPlugin {
                 )
                     .chain(),
             )
-            .add_systems(Update, handle_player_input);
+            .add_systems(Update, (update_vision, handle_player_input).chain());
     }
 }

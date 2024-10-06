@@ -7,7 +7,7 @@ use crate::{
     server::{
         components::{Collider, Creature, GridPosition, GridShape, Name, PlayerController},
         map_gen::{FloorGenerationParams, SimpleRoom},
-        senses::vision::Vision
+        senses::vision::Vision,
     },
 };
 
@@ -148,7 +148,11 @@ pub fn spawn_creatures_in_rooms(
                 GridPosition(spawn_coords),
                 GridShape::SingleBlock,
                 Collider,
-                Vision { range: 10 }
+                Vision {
+                    show_to_client: true,
+                    range: 10,
+                    ..default()
+                },
             ));
 
             spawn_events.send(CreatureSpawned {

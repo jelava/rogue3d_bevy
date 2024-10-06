@@ -15,7 +15,7 @@ pub struct GridPosition(pub IVec3);
 
 #[derive(Component)]
 pub enum GridShape {
-    SingleBlock
+    SingleBlock,
 }
 
 #[derive(Component)]
