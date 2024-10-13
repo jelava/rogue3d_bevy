@@ -2,13 +2,10 @@ use std::collections::HashSet;
 
 use bevy::{
     math::IVec3,
-    prelude::{Commands, Component, Entity, Query, With, Without},
+    prelude::{Commands, Component, Entity, Event, EventWriter, Query, With, Without},
 };
 
-use crate::{
-    bridge::{ClientSync, Id},
-    server::components::{GridPosition, GridShape},
-};
+use crate::server::components::{GridPosition, GridShape};
 
 /// Anything that can be seen (remove to make invisible!)
 #[derive(Component)]
@@ -21,7 +18,7 @@ pub struct Occluder;
 /// Component for anything that can see
 #[derive(Component)]
 pub struct Vision {
-    pub show_to_client: bool,
+    pub share_with_client: bool,
     pub range: usize,
     pub origin_offset: IVec3,
     pub seen_entities: HashSet<Entity>, // vision_data: Option<LocalGridData<VisionData>>
@@ -31,7 +28,7 @@ impl Default for Vision {
     fn default() -> Self {
         // todo: hardcoded constants :(
         Self {
-            show_to_client: false,
+            share_with_client: false,
             range: 10,
             origin_offset: IVec3::ZERO,
             seen_entities: HashSet::with_capacity(2 * 2 * 2),
@@ -50,11 +47,18 @@ impl Default for Vision {
 //     data: Vec<T>
 // }
 
+#[derive(Event)]
+pub struct EntitySeen(Entity);
+
+#[derive(Event)]
+pub struct EntityNoLongerSeen(Entity);
+
 // todo? querying and then checking for pos change is a bit inefficient, if it becomes a  consider switching to observers or something else
 pub fn update_vision(
-    mut commands: Commands,
+    mut entity_seen_events: EventWriter<EntitySeen>,
+    mut entity_no_longer_seen_events: EventWriter<EntityNoLongerSeen>,
     mut vision_query: Query<(&mut Vision, &GridPosition)>,
-    visible_query: Query<(Entity, &GridPosition, &GridShape), (With<Visible>, Without<ClientSync>)>,
+    visible_query: Query<(Entity, &GridPosition, &GridShape), With<Visible>>,
 ) {
     for (mut vision, vision_entity_origin) in &mut vision_query {
         let vision_origin = vision_entity_origin.0 + vision.origin_offset;
@@ -66,25 +70,22 @@ pub fn update_vision(
             let previously_seen = vision.seen_entities.contains(&visible_entity);
 
             if seen && !previously_seen {
-                // entity is being seen for the first time, add to seen_entities (and start syncing info about it with client)
+                // entity is being seen and hasn't been seen recently, add to seen_entities (and start syncing info about it with client)
                 vision.seen_entities.insert(visible_entity);
 
-                if vision.show_to_client {
-                    commands.entity(visible_entity).insert(ClientSync);
+                if vision.share_with_client {
+                    entity_seen_events.send(EntitySeen(visible_entity));
                 }
             } else if !seen && previously_seen {
                 // entity was seen last time vision was updated but is not seen this time, so remove it from seen_entities
                 vision.seen_entities.remove(&visible_entity);
-
-                if vision.show_to_client {
-                    commands.entity(visible_entity).remove::<ClientSync>();
-                }
+                entity_no_longer_seen_events.send(EntityNoLongerSeen(visible_entity));
             }
         }
     }
 }
 
-// todo: currently just checking radius, need to account for occluders
+// todo! currently just checking radius, need to account for occluders
 fn test_visibility(pos1: IVec3, pos2: IVec3, range: usize) -> bool {
     let p = pos2 - pos1;
     return p.x * p.x + p.y * p.y + p.z * p.z <= (range * range) as i32;

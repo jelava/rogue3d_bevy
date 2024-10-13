@@ -2,14 +2,11 @@ use bevy::{math::IVec3, prelude::*};
 use bevy_rand::prelude::{GlobalEntropy, WyRand};
 use rand::Rng;
 
-use crate::{
-    bridge::{BlockSpawned, CreatureSpawned, Id},
-    server::{
-        components::{Collider, Creature, GridPosition, GridShape, Name, PlayerController},
-        map_gen::{FloorGenerationParams, SimpleRoom},
-        senses::vision::Vision,
-    },
-};
+use crate::{bridge::{ClientShare, ShareId}, server::{
+    components::{Collider, GridPosition, GridShape, PlayerController},
+    map_gen::{FloorGenerationParams, SimpleRoom},
+    senses::vision::Vision,
+}};
 
 pub fn generate_abstract_floor(
     mut commands: Commands,
@@ -36,11 +33,7 @@ pub fn generate_abstract_floor(
 
 pub fn generate_blocks_from_rooms(
     mut commands: Commands,
-    // asset_server: Res<AssetServer>,
-    // mut meshes: ResMut<Assets<Mesh>>,
-    // mut materials: ResMut<Assets<StandardMaterial>>,
     floor_gen_params: Res<FloorGenerationParams>,
-    mut block_spawn_events: EventWriter<BlockSpawned>,
     rooms_query: Query<&SimpleRoom>,
 ) {
     for x in 0..floor_gen_params.floor_size.x {
@@ -62,23 +55,9 @@ pub fn generate_blocks_from_rooms(
                 }
 
                 if !inside_room {
-                    let id = Id::new();
                     let pos = IVec3::new(x, y, z);
 
-                    commands.spawn((
-                        id,
-                        GridPosition(pos),
-                        GridShape::SingleBlock,
-                        Collider,
-                        // PbrBundle {
-                        //     mesh: mesh_handle.clone(),
-                        //     material: material_handle.clone(),
-                        //     transform: Transform::from_xyz(x as f32, y as f32, z as f32),
-                        //     ..default()
-                        // },
-                    ));
-
-                    block_spawn_events.send(BlockSpawned { id, pos });
+                    commands.spawn((GridPosition(pos), GridShape::SingleBlock, Collider));
                 }
             }
         }
@@ -87,53 +66,13 @@ pub fn generate_blocks_from_rooms(
 
 pub fn spawn_creatures_in_rooms(
     mut commands: Commands,
-    // asset_server: Res<AssetServer>,
-    // mut meshes: ResMut<Assets<Mesh>>,
-    // mut materials: ResMut<Assets<StandardMaterial>>,
     mut rng: ResMut<GlobalEntropy<WyRand>>,
-    mut spawn_events: EventWriter<CreatureSpawned>,
     rooms_query: Query<&SimpleRoom>,
 ) {
-    /*
-    let texture_handle = asset_server.load_with_settings(
-        "textures/testface.png",
-        |settings: &mut ImageLoaderSettings| settings.sampler = ImageSampler::nearest(),
-    );
-
-    let mesh_handle = meshes.add(Rectangle::default());
-
-    let player_material_handle = materials.add(StandardMaterial {
-        base_color_texture: Some(texture_handle.clone()),
-        alpha_mode: AlphaMode::Mask(0.0),
-        unlit: true,
-        // cull_mode: None,
-        // alpha_mode: AlphaMode::Blend,
-        // perceptual_roughness: 1.0,
-        // reflectance: 0.0,
-        ..default()
-    });
-    */
-
-    /*
-    let npc_material_handle = materials.add(StandardMaterial {
-        base_color_texture: Some(texture_handle.clone()),
-        base_color: Color::srgb(1.0, 0.25, 0.25),
-        alpha_mode: AlphaMode::Mask(0.0),
-        unlit: true,
-        // cull_mode: None,
-        // alpha_mode: AlphaMode::Blend,
-        // perceptual_roughness: 1.0,
-        // reflectance: 0.0,
-        ..default()
-    });
-    */
-
     let mut player_spawned = false;
 
     for room in &rooms_query {
         if !player_spawned {
-            let id = Id::new();
-
             let spawn_coords = IVec3::new(
                 rng.gen_range((room.corner1.x + 1)..room.corner2.x),
                 1,
@@ -141,25 +80,18 @@ pub fn spawn_creatures_in_rooms(
             );
 
             commands.spawn((
-                id,
-                Creature,
+                ShareId::new(),
+                ClientShare::new(),
                 PlayerController,
-                Name(String::from("Jessie")),
                 GridPosition(spawn_coords),
                 GridShape::SingleBlock,
                 Collider,
                 Vision {
-                    show_to_client: true,
-                    range: 10,
+                    share_with_client: true,
+                    range: 20,
                     ..default()
                 },
             ));
-
-            spawn_events.send(CreatureSpawned {
-                id,
-                pos: spawn_coords,
-                is_player: true,
-            });
 
             player_spawned = true;
         }

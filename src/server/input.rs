@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::{
-    bridge::{Id, PlayerInputCommand, PositionUpdate},
+    bridge::{ClientShare, PlayerInputCommand, PositionUpdate},
     server::components::{Collider, GridPosition, PlayerController},
 };
 
@@ -11,7 +11,7 @@ pub fn handle_player_input(
     mut player_input_commands: EventReader<PlayerInputCommand>,
     mut position_updates: EventWriter<PositionUpdate>,
     mut player_position_query: Query<
-        (&mut GridPosition, &GridShape, &Id),
+        (&mut GridPosition, &GridShape, &ClientShare),
         (With<PlayerController>, With<Collider>),
     >,
     colliders_query: Query<
@@ -21,22 +21,23 @@ pub fn handle_player_input(
 ) {
     use PlayerInputCommand::*;
 
-    let (mut player_pos, player_shape, id) = player_position_query.single_mut();
+    let (mut player_pos, player_shape, client_share) = player_position_query.single_mut();
 
     if let Some(command) = player_input_commands.read().next() {
         match *command {
             Walk(dir) => match *player_shape {
                 GridShape::SingleBlock => {
-                    // TODO: .0 is kinda ugly, use destructuring or something?
+                    // todo? .0 is kinda ugly, use destructuring or something?
                     let updated_pos = player_pos.0 + dir;
 
+                    // todo: need better collision testing!
                     if is_block_unoccupied(updated_pos, colliders_query) {
                         *player_pos = GridPosition(updated_pos);
 
-                        position_updates.send(PositionUpdate {
-                            id: *id,
-                            pos: updated_pos,
-                        });
+                        // position_updates.send(PositionUpdate {
+                        //     share_id: client_share.share_id,
+                        //     pos: updated_pos,
+                        // });
                     }
                 }
             },

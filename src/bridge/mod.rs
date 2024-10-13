@@ -2,56 +2,78 @@
 use bevy::{
     app::Plugin,
     math::IVec3,
-    prelude::{Component, Event},
+    prelude::{Component, Entity, Event},
 };
 use uuid::Uuid;
+
+mod local;
 
 pub struct BridgePlugin;
 
 impl Plugin for BridgePlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_event::<BlockSpawned>();
-        app.add_event::<CreatureSpawned>();
+        app.add_event::<ClientSpawn>();
         app.add_event::<PlayerInputCommand>();
         app.add_event::<PositionUpdate>();
     }
 }
 
-///
-#[derive(Component)]
-pub struct ClientSync;
+// Components for sharing stuff between client and server
 
-// todo? remove this or at least reduce scope of how it's currently used
-#[derive(Component, Copy, Clone, Debug, Eq, PartialEq)]
-pub struct Id(Uuid);
+/// Client and server entities that are shared should have this component (with the same Uuid if they are the "same"
+/// entity). Used to keep track of which client entity corresponds to a server entity when sharing events/data.
+#[derive(Component, Copy, Clone, PartialEq, Eq)]
+pub struct ShareId(Uuid);
 
-impl Id {
+impl ShareId {
     pub fn new() -> Self {
         Self(Uuid::new_v4())
     }
 }
+
+/// Component for server entities to indicate status of whether it's shared with the client
+#[derive(Component)]
+pub enum ClientShare {
+    NotYetShared,
+    CurrentlyShared,
+    PreviouslyShared,
+}
+
+impl ClientShare {
+    pub fn new() -> Self {
+        Self::NotYetShared
+    }
+}
+
+// client to server events
 
 #[derive(Event, Copy, Clone)]
 pub enum PlayerInputCommand {
     Walk(IVec3),
 }
 
+// server to client events
+
+/// Sent by server to tell the client to spawn a shared entity
+/// todo: this needs to be made more flexible, maybe broken up into separate events for different categories of entities
 #[derive(Event)]
-pub struct CreatureSpawned {
-    pub id: Id,
-    pub pos: IVec3,
-    pub is_player: bool,
+pub struct ClientSpawn {
+    pub share_id: ShareId,
+    pub entity_kind: EntityKind,
 }
 
-// todo - implement an actual chunking system and don't deal with blocks 1 by 1
-#[derive(Event)]
-pub struct BlockSpawned {
-    pub id: Id,
-    pub pos: IVec3,
+// todo!!! this is just a temporary hack, will need a much more flexible/extensible way of telling the client what to spawn
+pub enum EntityKind {
+    Player(IVec3),
+    Npc(IVec3),
+    Block(IVec3),
 }
+
+// #[derive(Event)]
+// pub struct RenderInClient;
 
 #[derive(Event)]
 pub struct PositionUpdate {
-    pub id: Id,
+    pub share_id: ShareId,
     pub pos: IVec3,
 }

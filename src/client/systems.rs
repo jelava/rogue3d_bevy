@@ -4,26 +4,30 @@ use bevy::{
 };
 
 use crate::{
-    bridge::{BlockSpawned, CreatureSpawned, Id, PositionUpdate},
+    bridge::{ClientSpawn, EntityKind, PositionUpdate, ShareId},
     client::components::*,
 };
 
-pub fn handle_creature_spawns(
+pub fn handle_spawns(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    mut creature_spawn_events: EventReader<CreatureSpawned>,
+    mut client_spawn_events: EventReader<ClientSpawn>,
 ) {
-    let texture_handle = asset_server.load_with_settings(
+    use EntityKind::*;
+
+    // todo: load these assets in advance and store handles to them (or anything else more efficient than this...)
+
+    let rect_mesh_handle = meshes.add(Rectangle::default());
+
+    let creature_texture_handle = asset_server.load_with_settings(
         "textures/testface.png",
         |settings: &mut ImageLoaderSettings| settings.sampler = ImageSampler::nearest(),
     );
 
-    let mesh_handle = meshes.add(Rectangle::default());
-
     let player_material_handle = materials.add(StandardMaterial {
-        base_color_texture: Some(texture_handle.clone()),
+        base_color_texture: Some(creature_texture_handle.clone()),
         alpha_mode: AlphaMode::Mask(0.0),
         unlit: true,
         // cull_mode: None,
@@ -33,9 +37,8 @@ pub fn handle_creature_spawns(
         ..default()
     });
 
-    /*
     let npc_material_handle = materials.add(StandardMaterial {
-        base_color_texture: Some(texture_handle.clone()),
+        base_color_texture: Some(creature_texture_handle.clone()),
         base_color: Color::srgb(1.0, 0.25, 0.25),
         alpha_mode: AlphaMode::Mask(0.0),
         unlit: true,
@@ -45,9 +48,78 @@ pub fn handle_creature_spawns(
         // reflectance: 0.0,
         ..default()
     });
-    */
 
-    for spawn_event in creature_spawn_events.read() {
+    let block_mesh_handle = meshes.add(Cuboid::default());
+
+    let block_texture_handle = asset_server.load_with_settings(
+        "textures/testdots_tiny.png",
+        |settings: &mut ImageLoaderSettings| settings.sampler = ImageSampler::nearest(),
+    );
+
+    let block_material_handle = materials.add(StandardMaterial {
+        base_color_texture: Some(block_texture_handle.clone()),
+        unlit: true,
+        // perceptual_roughness: 1.0,
+        // reflectance: 0.0,
+        ..default()
+    });
+
+    // let new_npc_bundles = Vec::new();
+    // let new_block_bundles = Vec::new();
+
+    for spawn_event in client_spawn_events.read() {
+        match spawn_event.entity_kind {
+            Player(pos) => {
+                let pos_vec = Vec3::new(pos.x as f32, pos.y as f32, pos.z as f32);
+
+                commands.spawn((
+                    spawn_event.share_id,
+                    Billboard,
+                    PbrBundle {
+                        mesh: rect_mesh_handle.clone(),
+                        material: player_material_handle.clone(),
+                        transform: Transform::from_translation(pos_vec),
+                        ..default()
+                    },
+                ));
+
+                commands.spawn(Camera3dBundle {
+                    transform: Transform::from_translation(
+                        pos_vec + Vec3::new(0.0, 8.0, 10.0), // todo: hardcoded constant
+                    )
+                    .looking_at(pos_vec, Vec3::Y),
+                    ..default()
+                });
+            }
+            Npc(pos) => {
+                commands.spawn((
+                    spawn_event.share_id,
+                    Billboard,
+                    PbrBundle {
+                        mesh: rect_mesh_handle.clone(),
+                        material: npc_material_handle.clone(),
+                        transform: Transform::from_xyz(pos.x as f32, pos.y as f32, pos.z as f32),
+                        ..default()
+                    },
+                ));
+            }
+            Block(pos) => {
+                commands.spawn((
+                    spawn_event.share_id,
+                    PbrBundle {
+                        mesh: block_mesh_handle.clone(),
+                        material: block_material_handle.clone(),
+                        transform: Transform::from_xyz(pos.x as f32, pos.y as f32, pos.z as f32),
+                        ..default()
+                    },
+                ));
+            }
+        };
+
+        // commands.spawn_batch(new_npc_bundles.drain(..));
+        // commands.spawn_batch(new_block_bundles.iter());
+
+        /*
         let spawn_coords = spawn_event.pos;
 
         let spawn_coords_vec = Vec3::new(
@@ -78,9 +150,11 @@ pub fn handle_creature_spawns(
         } else {
             todo!()
         }
+        */
     }
 }
 
+/*
 pub fn handle_block_spawns(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -119,14 +193,15 @@ pub fn handle_block_spawns(
         ));
     }
 }
+*/
 
 pub fn handle_position_updates(
     mut position_updates: EventReader<PositionUpdate>,
-    mut transform_query: Query<(&mut Transform, &Id)>,
+    mut transform_query: Query<(&mut Transform, &ShareId)>,
 ) {
     for event in position_updates.read() {
         for (mut transform, transform_id) in &mut transform_query {
-            if event.id == *transform_id {
+            if event.share_id == *transform_id {
                 transform.translation =
                     Vec3::new(event.pos.x as f32, event.pos.y as f32, event.pos.z as f32);
 
