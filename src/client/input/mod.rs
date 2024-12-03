@@ -1,13 +1,14 @@
 pub mod systems;
 
-use std::{collections::HashMap, hash::Hash};
+use std::hash::Hash;
 
 use bevy::{
     math::IVec3,
     prelude::{KeyCode, Resource},
+    utils::HashMap,
 };
 
-use crate::bridge::PlayerInputCommand;
+use crate::common::PlayerInputCommand;
 
 #[derive(Resource)]
 pub struct InputMap<I: Eq + Hash, C> {

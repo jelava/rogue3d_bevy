@@ -1,12 +1,13 @@
-/// Events (and eventually maybe other stuff?) that are used for communication between the client and server
+/// Components, resources, etc. that are useful for both the client and server
+pub mod grid;
+
+use uuid::Uuid;
+
 use bevy::{
     app::Plugin,
     math::IVec3,
-    prelude::{Component, Entity, Event},
+    prelude::{Component, Event},
 };
-use uuid::Uuid;
-
-mod local;
 
 pub struct BridgePlugin;
 
@@ -22,7 +23,7 @@ impl Plugin for BridgePlugin {
 
 /// Client and server entities that are shared should have this component (with the same Uuid if they are the "same"
 /// entity). Used to keep track of which client entity corresponds to a server entity when sharing events/data.
-#[derive(Component, Copy, Clone, PartialEq, Eq)]
+#[derive(Component, Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ShareId(Uuid);
 
 impl ShareId {
@@ -32,6 +33,7 @@ impl ShareId {
 }
 
 /// Component for server entities to indicate status of whether it's shared with the client
+// todo: move to server module, client will never need to know about this
 #[derive(Component)]
 pub enum ClientShare {
     NotYetShared,

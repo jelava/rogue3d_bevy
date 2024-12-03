@@ -1,11 +1,12 @@
 use bevy::prelude::*;
 
 use crate::{
-    bridge::{ClientShare, PlayerInputCommand, PositionUpdate},
-    server::components::{Collider, GridPosition, PlayerController},
+    common::{
+        grid::{GridPosition, GridShape},
+        ClientShare, PlayerInputCommand, PositionUpdate,
+    },
+    server::components::{Collider, PlayerController},
 };
-
-use super::components::GridShape;
 
 pub fn handle_player_input(
     mut player_input_commands: EventReader<PlayerInputCommand>,

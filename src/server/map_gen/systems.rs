@@ -2,11 +2,17 @@ use bevy::{math::IVec3, prelude::*};
 use bevy_rand::prelude::{GlobalEntropy, WyRand};
 use rand::Rng;
 
-use crate::{bridge::{ClientShare, ShareId}, server::{
-    components::{Collider, GridPosition, GridShape, PlayerController},
-    map_gen::{FloorGenerationParams, SimpleRoom},
-    senses::vision::Vision,
-}};
+use crate::{
+    common::{
+        grid::{GridPosition, GridShape},
+        ClientShare, ShareId,
+    },
+    server::{
+        components::{Collider, PlayerController},
+        map_gen::{FloorGenerationParams, SimpleRoom},
+        senses::sight::Sight,
+    },
+};
 
 pub fn generate_abstract_floor(
     mut commands: Commands,
@@ -86,11 +92,7 @@ pub fn spawn_creatures_in_rooms(
                 GridPosition(spawn_coords),
                 GridShape::SingleBlock,
                 Collider,
-                Vision {
-                    share_with_client: true,
-                    range: 20,
-                    ..default()
-                },
+                Sight::new(10),
             ));
 
             player_spawned = true;
