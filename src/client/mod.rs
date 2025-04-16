@@ -2,10 +2,13 @@ mod components;
 mod input;
 mod systems;
 
+use std::default;
+
 use bevy::{
-    app::{Plugin, Startup, Update},
+    app::{Plugin, PluginGroupBuilder, Startup, Update},
     core_pipeline::core_3d::Camera3d,
-    prelude::{Commands, DefaultPlugins, IntoSystemConfigs},
+    prelude::{default, Commands, DefaultPlugins, IntoSystemConfigs, PluginGroup},
+    window::{Window, WindowPlugin},
 };
 
 use crate::client::{
@@ -17,7 +20,17 @@ pub struct ClientPlugin;
 
 impl Plugin for ClientPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_plugins(DefaultPlugins)
+        use std::default::Default;
+
+        let default_plugins = DefaultPlugins.set(WindowPlugin {
+            primary_window: Some(Window {
+                title: "rogue3d".into(),
+                ..default()
+            }),
+            ..default()
+        });
+
+        app.add_plugins(default_plugins)
             .insert_resource(PlayerInputMap::default())
             .add_systems(Startup, spawn_camera)
             .add_systems(
