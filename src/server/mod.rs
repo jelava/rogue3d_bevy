@@ -27,6 +27,6 @@ impl Plugin for ServerPlugin {
                 )
                     .chain(),
             )
-            .add_systems(Update, (update_sight, handle_player_input).chain());
+            .add_systems(Update, (/*update_sight,*/handle_player_input).chain());
     }
 }

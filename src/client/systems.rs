@@ -87,7 +87,7 @@ pub fn handle_spawns(
                                                           */
                 ));
 
-                commands.spawn(Camera3d::default());
+                // commands.spawn(Camera3d::default());
 
                 /*
                 commands.spawn(Camera3dBundle {
