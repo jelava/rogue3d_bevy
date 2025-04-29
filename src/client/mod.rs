@@ -2,10 +2,8 @@ mod components;
 mod input;
 mod systems;
 
-use std::default;
-
 use bevy::{
-    app::{Plugin, PluginGroupBuilder, Startup, Update},
+    app::{Plugin, Startup, Update},
     core_pipeline::core_3d::Camera3d,
     prelude::{default, Commands, DefaultPlugins, IntoSystemConfigs, PluginGroup},
     window::{Window, WindowPlugin},

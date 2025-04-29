@@ -2,9 +2,7 @@ use bevy::{log::LogPlugin, prelude::*};
 
 use rogue3d_bevy::common::grid::{
     // GridChunkIndex,
-    GridIndex,
-    GridPosition,
-    SparseGridIndex,
+    EntityGridIndexPlugin, GridIndex, GridPosition, SparseGridIndex
 };
 
 // Generic set of basic tests for anything that implements GridIndex (specific tests below)
@@ -13,14 +11,17 @@ fn basic_grid_index_tests<I: GridIndex<Entity> + Resource + Default>() {
     App::new()
         .add_plugins(MinimalPlugins)
         .add_plugins(LogPlugin::default())
-        .init_resource::<I>()
-        .add_systems(Startup, (init_grid_index_hooks::<I>, init_spawns).chain())
+        .add_plugins(EntityGridIndexPlugin::<I>::default())
+        // .init_resource::<I>()
+        // .add_systems(Startup, (init_grid_index_hooks::<I>, init_spawns).chain())
+        .add_systems(Startup, init_spawns)
         .add_systems(PostStartup, check_init::<I>)
         .add_systems(Update, tick::<I>)
         .add_systems(PostUpdate, check_tick::<I>)
         .run();
 }
 
+/*
 fn init_grid_index_hooks<I: GridIndex<Entity> + Resource>(world: &mut World) {
     info!("setting up component hooks");
 
@@ -43,6 +44,7 @@ fn init_grid_index_hooks<I: GridIndex<Entity> + Resource>(world: &mut World) {
             // it will handle adding the entity at the new pos.
         });
 }
+*/
 
 fn init_spawns(mut commands: Commands) {
     info!("spawning ents w/ grid position");
@@ -114,6 +116,7 @@ fn check_tick<I: GridIndex<Entity> + Resource>(
 fn basic_sparse_grid_index_tests() {
     basic_grid_index_tests::<SparseGridIndex<Entity>>();
 }
+
 /*
 #[test]
 fn basic_grid_chunk_index_tests() {

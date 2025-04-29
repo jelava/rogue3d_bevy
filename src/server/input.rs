@@ -31,7 +31,7 @@ pub fn handle_player_input(
                     // todo? .0 is kinda ugly, use destructuring or something?
                     let updated_pos = player_pos.0 + dir;
 
-                    // todo: need better collision testing!
+                    // todo: need better collision testing! (use grid index!!!)
                     if is_block_unoccupied(updated_pos, colliders_query) {
                         *player_pos = GridPosition(updated_pos);
 

@@ -1,16 +1,9 @@
 use bevy::{
-    ecs::{component::ComponentId, world::DeferredWorld},
     prelude::*,
     utils::HashMap,
 };
 
 #[derive(Component)]
-// #[component(
-// on_add = on_add_grid_position_hook,
-// on_insert = on_insert_grid_position_hook,
-// on_remove = on_remove_grid_position_hook,
-// on_replace = on_replace_grid_position_hook
-// )]
 pub struct GridPosition(pub IVec3);
 
 #[derive(Component)]
@@ -26,6 +19,39 @@ pub trait GridIndex<T> {
     fn get(&self, pos: IVec3) -> Option<&T>;
     fn try_insert(&mut self, pos: IVec3, data: T) -> bool;
     fn remove(&mut self, pos: IVec3);
+}
+
+/// Plugin that provides a generic way to easily set up an grid index specifically for Bevy entities.
+#[derive(Default)]
+pub struct EntityGridIndexPlugin<I: GridIndex<Entity> + Resource + Default>(std::marker::PhantomData<I>);
+
+impl<I: GridIndex<Entity> + Resource + Default> Plugin for EntityGridIndexPlugin<I> {
+    fn build(&self, app: &mut App) {
+         app.init_resource::<I>()
+            .add_systems(Startup, init_grid_index_hooks::<I>);
+    }
+}
+
+fn init_grid_index_hooks<I: GridIndex<Entity> + Resource>(world: &mut World) {
+    world
+        .register_component_hooks::<GridPosition>()
+        .on_insert(|mut world, entity, _component_id| {
+            let &GridPosition(pos) = world.get(entity).unwrap();
+            let mut grid_index = world.resource_mut::<I>();
+
+            if !grid_index.try_insert(pos, entity) {
+                // TODO! this is almost certainly not the best way to handle this scenario...
+                panic!("Failed to insert entity into grid index at position {:?} (probably already occupied)", pos);
+            }
+        })
+        .on_replace(|mut world, entity, _component_id| {
+            let &GridPosition(pos) = world.get(entity).unwrap();
+            let mut grid_index = world.resource_mut::<I>();
+            grid_index.remove(pos);
+
+            // The insert hook is guaranteed to run after this if the component is being replaced and
+            // it will handle adding the entity at the new pos.
+        });
 }
 
 /// Useful for keeping track of locations of things that are scattered across a wide area with no extra
