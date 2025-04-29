@@ -1,7 +1,4 @@
-use bevy::{
-    prelude::*,
-    utils::HashMap,
-};
+use bevy::{platform::collections::HashMap, prelude::*};
 
 #[derive(Component)]
 pub struct GridPosition(pub IVec3);
@@ -23,11 +20,13 @@ pub trait GridIndex<T> {
 
 /// Plugin that provides a generic way to easily set up an grid index specifically for Bevy entities.
 #[derive(Default)]
-pub struct EntityGridIndexPlugin<I: GridIndex<Entity> + Resource + Default>(std::marker::PhantomData<I>);
+pub struct EntityGridIndexPlugin<I: GridIndex<Entity> + Resource + Default>(
+    std::marker::PhantomData<I>,
+);
 
 impl<I: GridIndex<Entity> + Resource + Default> Plugin for EntityGridIndexPlugin<I> {
     fn build(&self, app: &mut App) {
-         app.init_resource::<I>()
+        app.init_resource::<I>()
             .add_systems(Startup, init_grid_index_hooks::<I>);
     }
 }
@@ -35,7 +34,8 @@ impl<I: GridIndex<Entity> + Resource + Default> Plugin for EntityGridIndexPlugin
 fn init_grid_index_hooks<I: GridIndex<Entity> + Resource>(world: &mut World) {
     world
         .register_component_hooks::<GridPosition>()
-        .on_insert(|mut world, entity, _component_id| {
+        .on_insert(|mut world, context| {
+            let entity = context.entity;
             let &GridPosition(pos) = world.get(entity).unwrap();
             let mut grid_index = world.resource_mut::<I>();
 
@@ -44,7 +44,8 @@ fn init_grid_index_hooks<I: GridIndex<Entity> + Resource>(world: &mut World) {
                 panic!("Failed to insert entity into grid index at position {:?} (probably already occupied)", pos);
             }
         })
-        .on_replace(|mut world, entity, _component_id| {
+        .on_replace(|mut world, context| {
+            let entity = context.entity;
             let &GridPosition(pos) = world.get(entity).unwrap();
             let mut grid_index = world.resource_mut::<I>();
             grid_index.remove(pos);

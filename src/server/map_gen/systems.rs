@@ -16,21 +16,25 @@ use crate::{
 
 pub fn generate_abstract_floor(
     mut commands: Commands,
-    mut rng: ResMut<GlobalEntropy<WyRand>>,
+    mut rng: GlobalEntropy<WyRand>,
     floor_gen_params: Res<FloorGenerationParams>,
 ) {
     for _ in 0..floor_gen_params.max_num_rooms {
         let corner1 = IVec3::new(
-            rng.gen_range(0..(floor_gen_params.floor_size.x - floor_gen_params.max_room_size.x)),
+            rng.random_range(0..(floor_gen_params.floor_size.x - floor_gen_params.max_room_size.x)),
             0, //rng.gen_range(0..params.floor_size.y),
-            rng.gen_range(0..(floor_gen_params.floor_size.z - floor_gen_params.max_room_size.z)),
+            rng.random_range(0..(floor_gen_params.floor_size.z - floor_gen_params.max_room_size.z)),
         );
 
         let corner2 = corner1
             + IVec3::new(
-                rng.gen_range(floor_gen_params.min_room_size.x..=floor_gen_params.max_room_size.x),
+                rng.random_range(
+                    floor_gen_params.min_room_size.x..=floor_gen_params.max_room_size.x,
+                ),
                 floor_gen_params.max_room_size.y, //rng.gen_range(params.min_room_size.y..=params.max_room_size.y),
-                rng.gen_range(floor_gen_params.min_room_size.z..=floor_gen_params.max_room_size.z),
+                rng.random_range(
+                    floor_gen_params.min_room_size.z..=floor_gen_params.max_room_size.z,
+                ),
             );
 
         commands.spawn(SimpleRoom { corner1, corner2 });
@@ -72,7 +76,7 @@ pub fn generate_blocks_from_rooms(
 
 pub fn spawn_creatures_in_rooms(
     mut commands: Commands,
-    mut rng: ResMut<GlobalEntropy<WyRand>>,
+    mut rng: GlobalEntropy<WyRand>,
     rooms_query: Query<&SimpleRoom>,
 ) {
     let mut player_spawned = false;
@@ -80,9 +84,9 @@ pub fn spawn_creatures_in_rooms(
     for room in &rooms_query {
         if !player_spawned {
             let spawn_coords = IVec3::new(
-                rng.gen_range((room.corner1.x + 1)..room.corner2.x),
+                rng.random_range((room.corner1.x + 1)..room.corner2.x),
                 1,
-                rng.gen_range((room.corner1.z + 1)..room.corner2.z),
+                rng.random_range((room.corner1.z + 1)..room.corner2.z),
             );
 
             commands.spawn((

@@ -4,8 +4,8 @@ use std::hash::Hash;
 
 use bevy::{
     math::IVec3,
+    platform::collections::HashMap,
     prelude::{KeyCode, Resource},
-    utils::HashMap,
 };
 
 use crate::common::PlayerInputCommand;

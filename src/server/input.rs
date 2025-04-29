@@ -19,10 +19,10 @@ pub fn handle_player_input(
         (&GridPosition, &GridShape),
         (With<Collider>, Without<PlayerController>),
     >,
-) {
+) -> Result {
     use PlayerInputCommand::*;
 
-    let (mut player_pos, player_shape, client_share) = player_position_query.single_mut();
+    let (mut player_pos, player_shape, client_share) = player_position_query.single_mut()?;
 
     if let Some(command) = player_input_commands.read().next() {
         match *command {
@@ -44,6 +44,8 @@ pub fn handle_player_input(
             },
         }
     }
+
+    Ok(())
 }
 
 fn is_block_unoccupied(

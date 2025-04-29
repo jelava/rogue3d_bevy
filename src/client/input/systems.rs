@@ -11,7 +11,7 @@ pub fn player_kb_input_mapper(
     // just take the first one and ignore the rest
     if let Some(keycode) = kb_input.get_just_pressed().next() {
         if let Some(command) = input_map.get(keycode) {
-            player_input_events.send(*command);
+            player_input_events.write(*command);
         }
     }
 }
@@ -22,8 +22,8 @@ pub fn handle_camera_input(
     mouse_button_input: Res<ButtonInput<MouseButton>>,
     mut mouse_motion_events: EventReader<MouseMotion>,
     mut query: Query<&mut Transform, With<Camera>>,
-) {
-    let mut camera_transform = query.single_mut();
+) -> Result {
+    let mut camera_transform = query.single_mut()?;
 
     if keyboard_input.pressed(KeyCode::KeyW) {
         let forward = 0.1 * camera_transform.forward().as_vec3();
@@ -51,4 +51,6 @@ pub fn handle_camera_input(
             camera_transform.rotate_y(0.01 * -motion_event.delta.x);
         }
     }
+
+    Ok(())
 }

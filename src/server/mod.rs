@@ -1,10 +1,13 @@
 use bevy::prelude::*;
 use bevy_rand::{plugin::EntropyPlugin, prelude::WyRand};
 
-use crate::server::{
-    input::handle_player_input,
-    map_gen::{systems::*, FloorGenerationParams},
-    senses::sight::update_sight,
+use crate::{
+    common::grid::{EntityGridIndexPlugin, SparseGridIndex},
+    server::{
+        input::handle_player_input,
+        map_gen::{systems::*, FloorGenerationParams},
+        senses::sight::update_sight,
+    },
 };
 
 mod components;
@@ -18,6 +21,7 @@ pub struct ServerPlugin;
 impl Plugin for ServerPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(EntropyPlugin::<WyRand>::default())
+            .add_plugins(EntityGridIndexPlugin::<SparseGridIndex<Entity>>::default())
             .insert_resource(FloorGenerationParams::default())
             .add_systems(
                 Startup,

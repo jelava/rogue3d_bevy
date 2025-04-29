@@ -160,7 +160,7 @@ pub fn update_billboard_transforms(
     camera_transform_query: Query<&Transform, With<Camera>>,
     mut billboards_query: Query<&mut Transform, (With<Billboard>, Without<Camera>)>,
 ) {
-    if let Ok(camera_transform) = camera_transform_query.get_single() {
+    if let Ok(camera_transform) = camera_transform_query.single() {
         for mut transform in &mut billboards_query {
             transform.look_to(
                 camera_transform.forward().normalize(),

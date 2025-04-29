@@ -2,7 +2,10 @@ use bevy::{log::LogPlugin, prelude::*};
 
 use rogue3d_bevy::common::grid::{
     // GridChunkIndex,
-    EntityGridIndexPlugin, GridIndex, GridPosition, SparseGridIndex
+    EntityGridIndexPlugin,
+    GridIndex,
+    GridPosition,
+    SparseGridIndex,
 };
 
 // Generic set of basic tests for anything that implements GridIndex (specific tests below)
@@ -91,7 +94,7 @@ fn check_tick<I: GridIndex<Entity> + Resource>(
     pos_query: Query<Entity, With<GridPosition>>,
 ) {
     // there should be only one entity with a position at (2, 3, 4)
-    let pos_entity = pos_query.single();
+    let pos_entity = pos_query.single().expect("Query should get one entity");
 
     // this should just be a different way of getting that same entity
     let entity_at_234 = grid_index
@@ -107,7 +110,7 @@ fn check_tick<I: GridIndex<Entity> + Resource>(
     assert!(grid_index.get(IVec3::new(1, 2, 3)).is_none());
 
     info!("grid index successfully updated after update, exiting...");
-    app_exit.send(AppExit::Success);
+    app_exit.write(AppExit::Success);
 }
 
 // Basic test for specific index types

@@ -5,7 +5,7 @@ mod systems;
 use bevy::{
     app::{Plugin, Startup, Update},
     core_pipeline::core_3d::Camera3d,
-    prelude::{default, Commands, DefaultPlugins, IntoSystemConfigs, PluginGroup},
+    prelude::{default, Commands, DefaultPlugins, IntoScheduleConfigs, PluginGroup},
     window::{Window, WindowPlugin},
 };
 

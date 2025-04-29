@@ -4,9 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-bevy = "0.15"
-bevy_rand = { version = "0.8", features = ["wyrand"] }
-rand = "0.8"
+bevy = "0.16"
+bevy_rand = { version = "0.10.0", features = ["wyrand"] }
+rand = "0.9"
 uuid = { version = "1.11.0", features = ["v4", "fast-rng"] }
 
 [profile.test]
