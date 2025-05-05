@@ -5,9 +5,17 @@ use bevy::{
 
 use crate::{
     client::components::*,
-    common::{ClientSpawn, EntityKind, PositionUpdate, ShareId},
+    common::{ClientUpdate, EntityKind, SharedId},
 };
 
+pub fn handle_client_updates(
+    mut commands: Commands,
+    mut client_update_events: EventReader<ClientUpdate>,
+) {
+    for client_update in client_update_events.read() {}
+}
+
+/*
 pub fn handle_spawns(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -140,7 +148,7 @@ pub fn handle_spawns(
 
 pub fn handle_position_updates(
     mut position_updates: EventReader<PositionUpdate>,
-    mut transform_query: Query<(&mut Transform, &ShareId)>,
+    mut transform_query: Query<(&mut Transform, &SharedId)>,
 ) {
     for event in position_updates.read() {
         for (mut transform, transform_id) in &mut transform_query {
@@ -153,6 +161,7 @@ pub fn handle_position_updates(
         }
     }
 }
+*/
 
 // misc tech stuff
 

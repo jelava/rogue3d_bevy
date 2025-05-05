@@ -8,7 +8,7 @@ pub fn player_kb_input_mapper(
     mut player_input_events: EventWriter<PlayerInputCommand>,
 ) {
     // if there are many events to process since the last time the system ran, don't try to process them all at once
-    // just take the first one and ignore the rest
+    // just take the first one and ignore the rest (this could probably be improved - is the first one the most recent or oldest?)
     if let Some(keycode) = kb_input.get_just_pressed().next() {
         if let Some(command) = input_map.get(keycode) {
             player_input_events.write(*command);

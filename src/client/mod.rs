@@ -3,15 +3,17 @@ mod input;
 mod systems;
 
 use bevy::{
-    app::{Plugin, Startup, Update},
-    core_pipeline::core_3d::Camera3d,
-    prelude::{default, Commands, DefaultPlugins, IntoScheduleConfigs, PluginGroup},
+    app::{Plugin, PreUpdate, Startup, Update},
+    prelude::*,
     window::{Window, WindowPlugin},
 };
 
-use crate::client::{
-    input::{systems::*, PlayerInputMap},
-    systems::*,
+use crate::{
+    client::{
+        input::{systems::*, PlayerInputMap},
+        systems::*,
+    },
+    common::grid::SparseGridIndexPlugin,
 };
 
 pub struct ClientPlugin;
@@ -29,13 +31,15 @@ impl Plugin for ClientPlugin {
         });
 
         app.add_plugins(default_plugins)
+            .add_plugins(SparseGridIndexPlugin::default())
             .insert_resource(PlayerInputMap::default())
             .add_systems(Startup, spawn_camera)
+            .add_systems(PreUpdate, handle_client_updates)
             .add_systems(
                 Update,
                 (
                     player_kb_input_mapper,
-                    (handle_spawns, handle_position_updates).chain(),
+                    // (handle_spawns, handle_position_updates).chain(),
                     (handle_camera_input, update_billboard_transforms).chain(),
                 ),
             );

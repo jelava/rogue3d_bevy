@@ -1,6 +1,8 @@
-use bevy::{platform::collections::HashMap, prelude::*};
+use bevy::prelude::*;
 
-#[derive(Component)]
+use super::index::{ComponentIndexPlugin, SparseComponentIndex};
+
+#[derive(Component, Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct GridPosition(pub IVec3);
 
 #[derive(Component)]
@@ -12,26 +14,29 @@ pub enum GridShape {
 /// for data structures that will implement it for Bevy entities as T, but keeping the trait generic
 /// in case it turns out to be useful for other types too. Currently the interface is very minimal,
 /// basically just what is required for component hooks to maintain an index of entities by position.
+/*
 pub trait GridIndex<T> {
     fn get(&self, pos: IVec3) -> Option<&T>;
     fn try_insert(&mut self, pos: IVec3, data: T) -> bool;
     fn remove(&mut self, pos: IVec3);
 }
+*/
 
 /// Plugin that provides a generic way to easily set up an grid index specifically for Bevy entities.
+/*
 #[derive(Default)]
-pub struct EntityGridIndexPlugin<I: GridIndex<Entity> + Resource + Default>(
+pub struct GridIndexPlugin<I: ComponentIndex<GridPosition> + Resource + Default>(
     std::marker::PhantomData<I>,
 );
 
-impl<I: GridIndex<Entity> + Resource + Default> Plugin for EntityGridIndexPlugin<I> {
+impl<I: ComponentIndex<GridPosition> + Resource + Default> Plugin for GridIndexPlugin<I> {
     fn build(&self, app: &mut App) {
         app.init_resource::<I>()
             .add_systems(Startup, init_grid_index_hooks::<I>);
     }
 }
 
-fn init_grid_index_hooks<I: GridIndex<Entity> + Resource>(world: &mut World) {
+fn init_grid_index_hooks<I: ComponentIndex<GridPosition> + Resource>(world: &mut World) {
     world
         .register_component_hooks::<GridPosition>()
         .on_insert(|mut world, context| {
@@ -54,17 +59,23 @@ fn init_grid_index_hooks<I: GridIndex<Entity> + Resource>(world: &mut World) {
             // it will handle adding the entity at the new pos.
         });
 }
+*/
 
 /// Useful for keeping track of locations of things that are scattered across a wide area with no extra
 /// memory overhead, or which don't need to be efficiently accessible in sequence (an underlying data
 /// structure with better spatial locality will do better for that).
+pub type SparseGridIndex = SparseComponentIndex<GridPosition>;
+
+pub type SparseGridIndexPlugin = ComponentIndexPlugin<GridPosition, SparseGridIndex>;
+
+/*
 #[derive(Resource)]
-pub struct SparseGridIndex<T> {
-    data: HashMap<IVec3, T>,
+pub struct SparseGridIndex {
+    data: HashMap<IVec3, EntityHashSet>,
 }
 
 // Manually implement rather than derive to prevent complaints about T not implementing Default
-impl<T> Default for SparseGridIndex<T> {
+impl Default for SparseGridIndex {
     fn default() -> Self {
         Self {
             data: HashMap::new(),
@@ -72,19 +83,31 @@ impl<T> Default for SparseGridIndex<T> {
     }
 }
 
-impl<T> GridIndex<T> for SparseGridIndex<T> {
-    fn get(&self, pos: IVec3) -> Option<&T> {
-        self.data.get(&pos)
+impl ComponentIndex<GridPosition> for SparseGridIndex {
+    fn get(&self, component: &GridPosition) -> Option<EntityHashSet> {
+        self.data.get(&component.0)
     }
 
-    fn try_insert(&mut self, pos: IVec3, data: T) -> bool {
-        self.data.try_insert(pos, data).is_ok()
+    fn insert(&mut self, component: &GridPosition, entity: Entity) {
+        if let Some(mut entity_set) = self.get(component) {
+            entity_set.insert(entity);
+        } else {
+            self.data
+                .insert(&component.0, EntityHashSet::from([entity]));
+        }
     }
 
-    fn remove(&mut self, pos: IVec3) {
-        self.data.remove(&pos);
+    fn remove(&mut self, component: &GridPosition, entity: Entity) {
+        if let Some(mut entity_set) = self.get(component) {
+            entity_set.remove(&entity);
+
+            if entity_set.is_empty() {
+                self.data.remove(&component.0);
+            }
+        }
     }
 }
+*/
 
 // Array-based index for tracking locations in a fixed N*N*N cubic chunk of the grid. Best suited
 // for densely packed data that is clustered in a small area.

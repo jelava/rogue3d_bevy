@@ -7,7 +7,7 @@ use bevy::{
 
 use crate::common::{
     grid::{GridPosition, GridShape},
-    ClientShare,
+    // ClientShare,
 };
 
 /// Anything that can be seen (remove to make invisible!)
@@ -69,7 +69,7 @@ pub fn update_sight(
     // mut no_longer_seen_events: EventWriter<EntityNoLongerSeen>,
     mut vision_query: Query<(&mut Sight, &GridPosition)>,
     visible_query: Query<
-        (Entity, &GridPosition, &GridShape, Option<&mut ClientShare>),
+        (Entity, &GridPosition, &GridShape), //, Option<&mut ClientShare>),
         With<Visible>,
     >,
 ) {

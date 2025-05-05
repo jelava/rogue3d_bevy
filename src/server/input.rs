@@ -2,17 +2,18 @@ use bevy::prelude::*;
 
 use crate::{
     common::{
-        grid::{GridPosition, GridShape},
-        ClientShare, PlayerInputCommand, PositionUpdate,
+        grid::{GridPosition, GridShape, SparseGridIndex},
+        index::ComponentIndex,
+        PlayerInputCommand,
     },
     server::components::{Collider, PlayerController},
 };
 
 pub fn handle_player_input(
     mut player_input_commands: EventReader<PlayerInputCommand>,
-    mut position_updates: EventWriter<PositionUpdate>,
+    grid_index: Res<SparseGridIndex>,
     mut player_position_query: Query<
-        (&mut GridPosition, &GridShape, &ClientShare),
+        (&mut GridPosition, &GridShape),
         (With<PlayerController>, With<Collider>),
     >,
     colliders_query: Query<
@@ -22,23 +23,19 @@ pub fn handle_player_input(
 ) -> Result {
     use PlayerInputCommand::*;
 
-    let (mut player_pos, player_shape, client_share) = player_position_query.single_mut()?;
+    let (mut player_pos, player_shape) = player_position_query.single_mut()?;
 
     if let Some(command) = player_input_commands.read().next() {
         match *command {
             Walk(dir) => match *player_shape {
                 GridShape::SingleBlock => {
                     // todo? .0 is kinda ugly, use destructuring or something?
-                    let updated_pos = player_pos.0 + dir;
+                    let updated_pos = GridPosition(player_pos.0 + dir);
 
-                    // todo: need better collision testing! (use grid index!!!)
-                    if is_block_unoccupied(updated_pos, colliders_query) {
-                        *player_pos = GridPosition(updated_pos);
-
-                        // position_updates.send(PositionUpdate {
-                        //     share_id: client_share.share_id,
-                        //     pos: updated_pos,
-                        // });
+                    // todo! this is very simplistic/naive, simply doesn't allow 2+ entities in same cell regardless of whether they have Collider component
+                    if grid_index.get(&updated_pos).is_none() {
+                        *player_pos = updated_pos;
+                        info!("player moved to {:?}", updated_pos.0);
                     }
                 }
             },
@@ -46,24 +43,4 @@ pub fn handle_player_input(
     }
 
     Ok(())
-}
-
-fn is_block_unoccupied(
-    pos: IVec3,
-    colliders_query: Query<
-        (&GridPosition, &GridShape),
-        (With<Collider>, Without<PlayerController>),
-    >,
-) -> bool {
-    for (GridPosition(collider_pos), collider_shape) in &colliders_query {
-        match collider_shape {
-            GridShape::SingleBlock => {
-                if pos == *collider_pos {
-                    return false;
-                }
-            }
-        }
-    }
-
-    true
 }
