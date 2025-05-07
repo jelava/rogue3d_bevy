@@ -1,7 +1,8 @@
-pub mod grid;
 /// Components, resources, etc. that are useful for both the client and server
+pub mod grid;
 pub mod index;
 
+use index::unique::{UniqueComponentIndexPlugin, UniqueSparseComponentIndex};
 use uuid::Uuid;
 
 use bevy::{
@@ -21,8 +22,7 @@ pub struct BridgePlugin;
 
 impl Plugin for BridgePlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app //.init_resource::<SharedIdIndex>()
-            .add_event::<ClientUpdate>()
+        app.add_event::<ClientUpdate>()
             .add_event::<PlayerInputCommand>();
     }
 }
@@ -32,10 +32,6 @@ impl Plugin for BridgePlugin {
 /// Client and server entities that are shared should have this component (with the same Uuid if they are the "same"
 /// entity). Used to keep track of which client entity corresponds to a server entity when sharing events/data.
 #[derive(Component, Copy, Clone, Debug, Hash, PartialEq, Eq)]
-// #[component(
-//     on_add = on_shared_id_added,
-//     on_despawn = on_shared_id_despawn
-// )]
 pub struct SharedId(Uuid);
 
 impl SharedId {
@@ -44,34 +40,9 @@ impl SharedId {
     }
 }
 
-// pub type SharedIdIndex
+pub type SharedIdIndex = UniqueSparseComponentIndex<SharedId>;
 
-/*
-fn on_shared_id_added(mut world: DeferredWorld, context: HookContext) {
-    let entity = context.entity;
-    let SharedId(id) = world.get(entity).unwrap();
-    let mut shared_id_index = world.resource_mut::<SharedIdIndex>();
-}
-
-fn on_shared_id_despawn(mut world: DeferredWorld, context: HookContext) {}
-
-#[derive(Default)]
-pub struct SharedIdIndex(HashMap<SharedId, Entity>);
-
-impl EntityIndex<SharedId, Entity> for SharedIdIndex {
-    fn get(&self, pos: &SharedId) -> Option<&Entity> {
-        todo!()
-    }
-
-    fn try_insert(&mut self, pos: &SharedId, data: Entity) -> bool {
-        todo!()
-    }
-
-    fn remove(&mut self, pos: &SharedId) {
-        todo!()
-    }
-}
-*/
+pub type SharedIdIndexPlugin = UniqueComponentIndexPlugin<SharedId, SharedIdIndex>;
 
 // client to server events
 

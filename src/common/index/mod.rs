@@ -1,24 +1,13 @@
-use std::hash::Hash;
+/// Traits for Resources that help with looking up entities by component value
+pub mod unique;
+
+use std::{hash::Hash, marker::PhantomData};
 
 use bevy::{
     ecs::{component::HookContext, entity::EntityHashSet},
     platform::collections::HashMap,
     prelude::*,
 };
-
-/*
-pub trait UniqueComponentIndex<C: Component>: Resource {
-    fn get(&self, component: &C) -> Option<Entity>;
-    fn try_insert(&mut self, component: &C, entity: Entity) -> bool;
-    fn remove(&mut self, component: &C);
-}
-*/
-
-/// Doesn't require adding any actual functions (yet?), just a shorthand to avoid having to write
-/// Component + Copy + Clone repeatedly
-// pub trait IndexableComponent: Component + Copy + Clone {}
-
-// impl<C: Component + Copy + Clone> IndexableComponent for C {}
 
 pub trait ComponentIndex<C: Component>: Resource {
     // type Cmp: Component + Copy + Clone;
@@ -32,12 +21,12 @@ pub trait ComponentIndex<C: Component>: Resource {
 /// memory overhead, or which don't need to be efficiently accessible in sequence (an underlying data
 /// structure with better spatial locality will do better for that).
 #[derive(Resource)]
-pub struct SparseComponentIndex<C: Component + Copy + Clone + Hash + Eq> {
+pub struct SparseComponentIndex<C: Component + Eq + Hash> {
     data: HashMap<C, EntityHashSet>,
 }
 
 // Manually implement rather than derive to prevent complaints about T not implementing Default
-impl<C: Component + Copy + Clone + Hash + Eq> Default for SparseComponentIndex<C> {
+impl<C: Component + Eq + Hash> Default for SparseComponentIndex<C> {
     fn default() -> Self {
         Self {
             data: HashMap::new(),
@@ -45,7 +34,7 @@ impl<C: Component + Copy + Clone + Hash + Eq> Default for SparseComponentIndex<C
     }
 }
 
-impl<C: Component + Copy + Clone + Hash + Eq> ComponentIndex<C> for SparseComponentIndex<C> {
+impl<C: Component + Eq + Hash> ComponentIndex<C> for SparseComponentIndex<C> {
     // type Cmp = C;
 
     fn get(&self, component: &C) -> Option<&EntityHashSet> {
@@ -72,22 +61,30 @@ impl<C: Component + Copy + Clone + Hash + Eq> ComponentIndex<C> for SparseCompon
 }
 
 // #[derive(Default)]
-pub struct ComponentIndexPlugin<C: Component + Copy + Clone, I: ComponentIndex<C> + Default>(std::marker::PhantomData<(C, I)>);
+pub struct ComponentIndexPlugin<C: Component + Copy + Clone, I: ComponentIndex<C> + Default>(
+    PhantomData<(C, I)>,
+);
 
-impl<C: Component + Copy + Clone, I: ComponentIndex<C> + Default> Default for ComponentIndexPlugin<C, I> {
+impl<C: Component + Copy + Clone, I: ComponentIndex<C> + Default> Default
+    for ComponentIndexPlugin<C, I>
+{
     fn default() -> Self {
-        Self(std::marker::PhantomData)
+        Self(PhantomData)
     }
 }
 
-impl<C: Component + Copy + Clone, I: ComponentIndex<C> + Default> Plugin for ComponentIndexPlugin<C, I> {
+impl<C: Component + Copy + Clone, I: ComponentIndex<C> + Default> Plugin
+    for ComponentIndexPlugin<C, I>
+{
     fn build(&self, app: &mut App) {
         app.init_resource::<I>()
-            .add_systems(Startup, init_component_index_hooks::<C, I>);
+            .add_systems(Startup, register_component_index_hooks::<C, I>);
     }
 }
 
-fn init_component_index_hooks<C: Component + Copy + Clone, I: ComponentIndex<C>>(world: &mut World) {
+fn register_component_index_hooks<C: Component + Copy + Clone, I: ComponentIndex<C>>(
+    world: &mut World,
+) {
     world
         .register_component_hooks::<C>()
         .on_insert(|mut world, HookContext { entity, .. }| {

@@ -27,7 +27,10 @@ fn init_spawns(mut commands: Commands) {
     info!("init done");
 }
 
-fn check_init<I: ComponentIndex<GridPosition>>(grid_index: Res<I>, pos_query: Query<&GridPosition>) {
+fn check_init<I: ComponentIndex<GridPosition>>(
+    grid_index: Res<I>,
+    pos_query: Query<&GridPosition>,
+) {
     for pos in &pos_query {
         info!("checking pos {:?}", pos);
         let pos_entities = grid_index.get(pos).expect("Expected to find entities");
@@ -45,7 +48,7 @@ fn tick<I: ComponentIndex<GridPosition>>(mut commands: Commands, grid_index: Res
         .expect("Expected to find entity at (1, 2, 3)");
 
     assert_eq!(entities_at_123.len(), 1);
-    
+
     let entity_at_123 = entities_at_123.iter().next().unwrap();
 
     commands

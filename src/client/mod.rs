@@ -13,7 +13,7 @@ use crate::{
         input::{systems::*, PlayerInputMap},
         systems::*,
     },
-    common::grid::SparseGridIndexPlugin,
+    common::{grid::SparseGridIndexPlugin, SharedIdIndexPlugin},
 };
 
 pub struct ClientPlugin;
@@ -31,6 +31,7 @@ impl Plugin for ClientPlugin {
         });
 
         app.add_plugins(default_plugins)
+            .add_plugins(SharedIdIndexPlugin::default())
             .add_plugins(SparseGridIndexPlugin::default())
             .insert_resource(PlayerInputMap::default())
             .add_systems(Startup, spawn_camera)

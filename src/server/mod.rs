@@ -33,7 +33,7 @@ impl Plugin for ServerPlugin {
 #[derive(Component)]
 struct ClientSync;
 
-// todo! this is extremely naive and only updating positions (need to think of more generalized approach)
+// todo! this is extremely naive and only updates positions (need to think of more generalized approach)
 fn send_client_updates(
     mut client_update_events: EventWriter<ClientUpdate>,
     sync_query: Query<(&SharedId, &EntityKind, &GridPosition), With<ClientSync>>,
