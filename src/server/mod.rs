@@ -4,8 +4,7 @@ use components::{Collider, PlayerController};
 
 use crate::{
     common::{
-        grid::{GridPosition, GridShape, SparseGridIndexPlugin},
-        ClientUpdate, EntityKind, SharedId,
+        grid::{GridPosition, GridShape, SparseGridIndexPlugin}, index::unique::{UniqueComponentIndexPlugin, UniqueSparseComponentIndex}, ClientUpdate, EntityKind, SharedId
     },
     server::input::handle_player_input,
 };
@@ -16,12 +15,11 @@ mod knowledge;
 mod map_gen;
 mod senses;
 
-pub struct ServerPlugin;
+struct BaseServerPlugin;
 
-impl Plugin for ServerPlugin {
+impl Plugin for BaseServerPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(EntropyPlugin::<WyRand>::default())
-            .add_plugins(SparseGridIndexPlugin::default())
             // .insert_resource(FloorGenerationParams::default())
             .add_systems(Startup, generate_test_level)
             // .add_systems(PreUpdate, (update_senses, update_knowledge).chain())
@@ -92,3 +90,17 @@ fn generate_test_level(mut commands: Commands) {
         // Sight::new(10),
     ));
 }
+
+pub struct LocalServerPlugin;
+
+impl Plugin for LocalServerPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_plugins(BaseServerPlugin)
+            .add_plugins(ServerSharedIdIndexPlugin::default());
+    }
+}
+
+#[derive(Component, Copy, Clone, PartialEq, Eq, Hash)]
+struct ServerSharedId(SharedId);
+
+type ServerSharedIdIndexPlugin = UniqueComponentIndexPlugin<ServerSharedId, UniqueSparseComponentIndex<ServerSharedId>>;

@@ -60,7 +60,6 @@ impl<C: Component + Eq + Hash> ComponentIndex<C> for SparseComponentIndex<C> {
     }
 }
 
-// #[derive(Default)]
 pub struct ComponentIndexPlugin<C: Component + Copy + Clone, I: ComponentIndex<C> + Default>(
     PhantomData<(C, I)>,
 );

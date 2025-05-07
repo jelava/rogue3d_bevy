@@ -2,28 +2,27 @@
 pub mod grid;
 pub mod index;
 
+use grid::SparseGridIndexPlugin;
 use index::unique::{UniqueComponentIndexPlugin, UniqueSparseComponentIndex};
 use uuid::Uuid;
 
-use bevy::{
-    app::Plugin,
-    ecs::{
-        component::HookContext,
-        entity::Entity,
-        resource::Resource,
-        world::{DeferredWorld, World},
-    },
-    math::IVec3,
-    platform::collections::HashMap,
-    prelude::{Component, Event},
-};
+use bevy::{app::Plugin, math::IVec3, prelude::*};
 
-pub struct BridgePlugin;
+struct BaseBridgePlugin;
 
-impl Plugin for BridgePlugin {
+impl Plugin for BaseBridgePlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.add_event::<ClientUpdate>()
             .add_event::<PlayerInputCommand>();
+    }
+}
+
+pub struct LocalBridgePlugin;
+
+impl Plugin for LocalBridgePlugin {
+    fn build(&self, app: &mut bevy::prelude::App) {
+        app.add_plugins(BaseBridgePlugin)
+            .add_plugins(SparseGridIndexPlugin::default());
     }
 }
 
