@@ -60,7 +60,7 @@ impl<C: Component + Copy + Clone, I: UniqueComponentIndex<C> + Default> Plugin
 {
     fn build(&self, app: &mut App) {
         app.init_resource::<I>()
-            .add_systems(Startup, register_unique_component_index_hooks::<C, I>);
+            .add_systems(PreStartup, register_unique_component_index_hooks::<C, I>);
     }
 }
 

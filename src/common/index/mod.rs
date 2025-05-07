@@ -77,7 +77,7 @@ impl<C: Component + Copy + Clone, I: ComponentIndex<C> + Default> Plugin
 {
     fn build(&self, app: &mut App) {
         app.init_resource::<I>()
-            .add_systems(Startup, register_component_index_hooks::<C, I>);
+            .add_systems(PreStartup, register_component_index_hooks::<C, I>);
     }
 }
 

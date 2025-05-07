@@ -4,7 +4,9 @@ use components::{Collider, PlayerController};
 
 use crate::{
     common::{
-        grid::{GridPosition, GridShape, SparseGridIndexPlugin}, index::unique::{UniqueComponentIndexPlugin, UniqueSparseComponentIndex}, ClientUpdate, EntityKind, SharedId
+        grid::{GridPosition, GridShape, SparseGridIndexPlugin},
+        index::unique::{UniqueComponentIndexPlugin, UniqueSparseComponentIndex},
+        ClientUpdate, EntityKind, SharedId,
     },
     server::input::handle_player_input,
 };
@@ -103,4 +105,5 @@ impl Plugin for LocalServerPlugin {
 #[derive(Component, Copy, Clone, PartialEq, Eq, Hash)]
 struct ServerSharedId(SharedId);
 
-type ServerSharedIdIndexPlugin = UniqueComponentIndexPlugin<ServerSharedId, UniqueSparseComponentIndex<ServerSharedId>>;
+type ServerSharedIdIndexPlugin =
+    UniqueComponentIndexPlugin<ServerSharedId, UniqueSparseComponentIndex<ServerSharedId>>;

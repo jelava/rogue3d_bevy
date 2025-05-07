@@ -1,4 +1,8 @@
-use bevy::{log::LogPlugin, prelude::*};
+mod common;
+
+use common::*;
+
+use bevy::prelude::*;
 
 use rogue3d_bevy::common::{
     grid::{GridPosition, SparseGridIndex},
@@ -9,13 +13,12 @@ use rogue3d_bevy::common::{
 
 fn basic_grid_index_tests<I: ComponentIndex<GridPosition> + Default>() {
     App::new()
-        .add_plugins(MinimalPlugins)
-        .add_plugins(LogPlugin::default())
+        .add_plugins(BaseTestPlugins)
         .add_plugins(ComponentIndexPlugin::<GridPosition, I>::default())
         .add_systems(Startup, init_spawns)
         .add_systems(PostStartup, check_init::<I>)
         .add_systems(Update, tick::<I>)
-        .add_systems(PostUpdate, check_tick::<I>)
+        .add_systems(PostUpdate, (check_tick::<I>, end_test).chain())
         .run();
 }
 
@@ -55,7 +58,6 @@ fn tick<I: ComponentIndex<GridPosition>>(mut commands: Commands, grid_index: Res
         .entity(*entity_at_123)
         .insert(GridPosition(IVec3::new(2, 3, 4)));
 
-    // despawn the entity at (0, 0, 0) to test index removal
     let entities_at_000 = grid_index
         .get(&GridPosition(IVec3::new(0, 0, 0)))
         .expect("Expected to find entity at (0, 0, 0)");
@@ -64,12 +66,12 @@ fn tick<I: ComponentIndex<GridPosition>>(mut commands: Commands, grid_index: Res
 
     let entity_at_000 = *entities_at_000.iter().next().unwrap();
 
+    // despawn the entity at (0, 0, 0) to test index removal
     commands.entity(entity_at_000).despawn();
 }
 
 fn check_tick<I: ComponentIndex<GridPosition>>(
     grid_index: Res<I>,
-    mut app_exit: EventWriter<AppExit>,
     pos_query: Query<Entity, With<GridPosition>>,
 ) {
     // there should be only one entity with a position at (2, 3, 4)
@@ -91,9 +93,6 @@ fn check_tick<I: ComponentIndex<GridPosition>>(
 
     // nothing should be indexed at (1, 2, 3) since that entity moved
     assert!(grid_index.get(&GridPosition(IVec3::new(1, 2, 3))).is_none());
-
-    info!("grid index successfully updated after update, exiting...");
-    app_exit.write(AppExit::Success);
 }
 
 // Basic test for specific index types
@@ -102,10 +101,3 @@ fn check_tick<I: ComponentIndex<GridPosition>>(
 fn basic_sparse_grid_index_tests() {
     basic_grid_index_tests::<SparseGridIndex>();
 }
-
-/*
-#[test]
-fn basic_grid_chunk_index_tests() {
-    basic_grid_index_tests::<GridChunkIndex<5>>();
-}
-*/
