@@ -4,15 +4,29 @@ use common::*;
 
 use bevy::prelude::*;
 use rogue3d_bevy::common::{
-    index::unique::UniqueComponentIndex, SharedId, SharedIdIndex, SharedIdIndexPlugin,
+    index::unique::{UniqueComponentIndex, UniqueComponentIndexPlugin, UniqueSparseComponentIndex},
+    SharedId,
 };
+
+#[derive(Component, Copy, Clone, PartialEq, Eq, Hash)]
+struct TestSharedId(SharedId);
+
+impl TestSharedId {
+    fn new() -> Self {
+        Self(SharedId::new())
+    }
+}
+
+type TestSharedIdIndex = UniqueSparseComponentIndex<TestSharedId>;
+
+type TestSharedIdIndexPlugin = UniqueComponentIndexPlugin<TestSharedId, TestSharedIdIndex>;
 
 #[test]
 fn shared_id_index_test() {
     App::new()
-        .add_plugins((BaseTestPlugins, SharedIdIndexPlugin::default()))
+        .add_plugins((BaseTestPlugins, TestSharedIdIndexPlugin::default()))
         .insert_resource(TestData {
-            fixed_id: SharedId::new(),
+            fixed_id: TestSharedId::new(),
         })
         .add_systems(
             Startup,
@@ -23,16 +37,16 @@ fn shared_id_index_test() {
 
 #[derive(Resource)]
 struct TestData {
-    fixed_id: SharedId,
+    fixed_id: TestSharedId,
 }
 
 fn init_ids(mut commands: Commands) {
-    commands.spawn(SharedId::new());
-    commands.spawn(SharedId::new());
-    commands.spawn(SharedId::new());
+    commands.spawn(TestSharedId::new());
+    commands.spawn(TestSharedId::new());
+    commands.spawn(TestSharedId::new());
 }
 
-fn check_init(index: Res<SharedIdIndex>, query: Query<(Entity, &SharedId)>) {
+fn check_init(index: Res<TestSharedIdIndex>, query: Query<(Entity, &TestSharedId)>) {
     let mut count = 0;
 
     for (entity, id) in &query {
@@ -45,9 +59,9 @@ fn check_init(index: Res<SharedIdIndex>, query: Query<(Entity, &SharedId)>) {
 
 fn modify_ids(
     mut commands: Commands,
-    index: Res<SharedIdIndex>,
+    index: Res<TestSharedIdIndex>,
     test_data: Res<TestData>,
-    query: Query<(Entity, &SharedId)>,
+    query: Query<(Entity, &TestSharedId)>,
 ) {
     let mut iter = query.iter();
     let (entity, old_id) = iter.next().unwrap();
@@ -64,9 +78,9 @@ fn modify_ids(
 }
 
 fn check_modify(
-    index: Res<SharedIdIndex>,
+    index: Res<TestSharedIdIndex>,
     test_data: Res<TestData>,
-    query: Query<(Entity, &SharedId)>,
+    query: Query<(Entity, &TestSharedId)>,
 ) {
     assert!(index.get(&test_data.fixed_id).is_some());
 

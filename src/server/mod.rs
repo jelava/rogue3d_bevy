@@ -1,12 +1,12 @@
 use bevy::prelude::*;
 use bevy_rand::{plugin::EntropyPlugin, prelude::WyRand};
-use components::{Collider, PlayerController};
+use components::{ClientSync, Collider, PlayerController};
 
 use crate::{
     common::{
         grid::{GridPosition, GridShape, SparseGridIndexPlugin},
         index::unique::{UniqueComponentIndexPlugin, UniqueSparseComponentIndex},
-        ClientUpdate, EntityKind, SharedId,
+        ClientSyncUpdate, EntityKind, SharedId,
     },
     server::input::handle_player_input,
 };
@@ -26,25 +26,18 @@ impl Plugin for BaseServerPlugin {
             .add_systems(Startup, generate_test_level)
             // .add_systems(PreUpdate, (update_senses, update_knowledge).chain())
             .add_systems(Update, handle_player_input)
-            .add_systems(PostUpdate, send_client_updates);
+            .add_systems(PostUpdate, client_sync_update);
     }
 }
 
-#[derive(Component)]
-struct ClientSync;
-
 // todo! this is extremely naive and only updates positions (need to think of more generalized approach)
-fn send_client_updates(
-    mut client_update_events: EventWriter<ClientUpdate>,
-    sync_query: Query<(&SharedId, &EntityKind, &GridPosition), With<ClientSync>>,
+fn client_sync_update(
+    mut client_update_events: EventWriter<ClientSyncUpdate>,
+    sync_query: Query<(&ServerSharedId, &GridPosition), With<ClientSync>>,
 ) {
-    let client_updates: Vec<ClientUpdate> = sync_query
+    let client_updates: Vec<ClientSyncUpdate> = sync_query
         .iter()
-        .map(|(&shared_id, &kind, &GridPosition(pos))| ClientUpdate {
-            shared_id,
-            kind,
-            pos,
-        })
+        .map(|(&ServerSharedId(shared_id), &GridPosition(pos))| ClientSyncUpdate { shared_id, pos })
         .collect();
 
     client_update_events.write_batch(client_updates);
@@ -55,7 +48,8 @@ fn generate_test_level(mut commands: Commands) {
     for x in 0..20 {
         for z in 0..20 {
             commands.spawn((
-                SharedId::new(),
+                ServerSharedId::new(),
+                EntityKind::Block,
                 ClientSync,
                 GridPosition(IVec3::new(x, 0, z)),
                 GridShape::SingleBlock,
@@ -64,7 +58,8 @@ fn generate_test_level(mut commands: Commands) {
 
             if x == 0 || x == 19 || z == 0 || z == 19 {
                 commands.spawn((
-                    SharedId::new(),
+                    ServerSharedId::new(),
+                    EntityKind::Block,
                     ClientSync,
                     GridPosition(IVec3::new(x, 1, z)),
                     GridShape::SingleBlock,
@@ -72,7 +67,8 @@ fn generate_test_level(mut commands: Commands) {
                 ));
 
                 commands.spawn((
-                    SharedId::new(),
+                    ServerSharedId::new(),
+                    EntityKind::Block,
                     ClientSync,
                     GridPosition(IVec3::new(x, 2, z)),
                     GridShape::SingleBlock,
@@ -83,7 +79,8 @@ fn generate_test_level(mut commands: Commands) {
     }
 
     commands.spawn((
-        SharedId::new(),
+        ServerSharedId::new(),
+        EntityKind::Player,
         ClientSync,
         PlayerController,
         GridPosition(IVec3::new(10, 1, 10)),
@@ -104,6 +101,12 @@ impl Plugin for LocalServerPlugin {
 
 #[derive(Component, Copy, Clone, PartialEq, Eq, Hash)]
 struct ServerSharedId(SharedId);
+
+impl ServerSharedId {
+    fn new() -> Self {
+        Self(SharedId::new())
+    }
+}
 
 type ServerSharedIdIndexPlugin =
     UniqueComponentIndexPlugin<ServerSharedId, UniqueSparseComponentIndex<ServerSharedId>>;

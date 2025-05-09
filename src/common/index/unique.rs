@@ -76,9 +76,9 @@ fn register_unique_component_index_hooks<
             let component = *world.get::<C>(entity).unwrap();
             let result = world.resource_mut::<I>().try_insert(component, entity);
 
-            // todo: use the result in a better way
+            // todo: use the result in a better way and don't panic (at least in release builds)
             if result.is_err() {
-                warn!("Tried to insert duplicate component into a unique component index");
+                panic!("Tried to insert duplicate component into a unique component index");
             }
         })
         .on_replace(|mut world, HookContext { entity, .. }| {
