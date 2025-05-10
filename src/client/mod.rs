@@ -2,10 +2,10 @@ mod components;
 mod input;
 mod systems;
 
+use std::f32::consts::PI;
+
 use bevy::{
-    app::{Plugin, PreUpdate, Startup, Update},
-    prelude::*,
-    window::{Window, WindowPlugin},
+    app::{Plugin, PreUpdate, Startup, Update}, prelude::*, window::{Window, WindowPlugin}
 };
 
 use crate::{
@@ -34,14 +34,19 @@ impl Plugin for BaseClientPlugin {
 
         app.add_plugins(default_plugins)
             .init_resource::<PlayerInputMap>()
-            .add_systems(PreStartup, load_temp_asset_handles)
-            .add_systems(Startup, spawn_camera)
+            // .add_systems(PreStartup, load_temp_asset_handles)
+            .add_systems(Startup, (load_temp_asset_handles, spawn_camera))
             .add_systems(PreUpdate, client_sync_update_handler)
             .add_systems(
                 Update,
                 (
                     player_kb_input_mapper,
-                    (client_sync_start_handler, client_sync_update_handler, client_sync_stop_handler).chain(),
+                    (
+                        client_sync_start_handler,
+                        client_sync_update_handler,
+                        client_sync_stop_handler,
+                    )
+                        .chain(),
                     (handle_camera_input, update_billboard_transforms).chain(),
                 ),
             );
@@ -50,6 +55,19 @@ impl Plugin for BaseClientPlugin {
 
 fn spawn_camera(mut commands: Commands) {
     commands.spawn(Camera3d::default());
+
+    commands.spawn((
+        DirectionalLight {
+            illuminance: light_consts::lux::OVERCAST_DAY,
+            shadows_enabled: true,
+            ..default()
+        },
+        Transform {
+            translation: Vec3::new(0.0, 10.0, 0.0),
+            rotation: Quat::from_rotation_x(-PI / 4.0),
+            ..default()
+        },
+    ));
 }
 
 pub struct LocalClientPlugin;

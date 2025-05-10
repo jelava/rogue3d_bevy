@@ -1,12 +1,13 @@
 use bevy::{
     image::{ImageLoaderSettings, ImageSampler},
-    prelude::*
+    prelude::*,
 };
 
 use crate::{
     client::{components::*, ClientSharedId, ClientSharedIdIndex},
     common::{
-        grid::GridPosition, index::unique::UniqueComponentIndex, ClientSyncStart, ClientSyncStop, ClientSyncUpdate, EntityKind, SharedId
+        grid::GridPosition, index::unique::UniqueComponentIndex, ClientSyncStart, ClientSyncStop,
+        ClientSyncUpdate, EntityKind, SharedId,
     },
 };
 
@@ -15,19 +16,27 @@ pub fn client_sync_start_handler(
     shared_id_index: Res<ClientSharedIdIndex>,
     temp_asset_handles: Res<TempAssetHandles>,
     mut start_events: EventReader<ClientSyncStart>,
+    mut transform_query: Query<&mut Transform, With<ClientSharedId>>,
 ) {
     for start_event in start_events.read() {
         info!("Client received ClientSyncStart");
 
+        let pos_vec = Vec3::new(
+            start_event.pos.x as f32,
+            start_event.pos.y as f32,
+            start_event.pos.z as f32,
+        );
+
         if let Some(&entity) = shared_id_index.get(&ClientSharedId(start_event.shared_id)) {
-            // the entity already exists on client side, just update it
-            commands
-                .entity(entity)
-                .insert(GridPosition(start_event.pos));
+            // the entity already exists on client side, update the transform
+
+            // is this actually going to change the transform?
+            let mut transform = transform_query.get_mut(entity).unwrap();
+
+            transform.translation = pos_vec;
         } else {
             // no entity with a matching shared ID exists in the client, so spawn it
-            let pos_vec = Vec3::new(start_event.pos.x as f32, start_event.pos.y as f32, start_event.pos.z as f32);
-            
+
             match start_event.entity_kind {
                 EntityKind::Player => commands.spawn((
                     ClientSharedId(start_event.shared_id),
@@ -48,7 +57,7 @@ pub fn client_sync_start_handler(
                     Mesh3d(temp_asset_handles.block_mesh_handle.clone()),
                     MeshMaterial3d(temp_asset_handles.block_material_handle.clone()),
                     Transform::from_translation(pos_vec),
-                ))
+                )),
             };
         }
     }
@@ -59,18 +68,26 @@ pub fn client_sync_update_handler(
     mut commands: Commands,
     shared_id_index: Res<ClientSharedIdIndex>,
     mut update_events: EventReader<ClientSyncUpdate>,
+    mut transform_query: Query<&mut Transform, With<ClientSharedId>>,
 ) {
-    for client_update in update_events.read() {
+    for update_event in update_events.read() {
         // info!("Client received ClientSyncUpdate");
 
-        if let Some(&entity) = shared_id_index.get(&ClientSharedId(client_update.shared_id)) {
-            commands
-                .entity(entity)
-                .insert(GridPosition(client_update.pos));
+        let pos_vec = Vec3::new(
+            update_event.pos.x as f32,
+            update_event.pos.y as f32,
+            update_event.pos.z as f32,
+        );
+
+        if let Some(&entity) = shared_id_index.get(&ClientSharedId(update_event.shared_id)) {
+            // is this actually going to change the transform?
+            let mut transform = transform_query.get_mut(entity).unwrap();
+
+            transform.translation = pos_vec;
         } else {
             panic!(
                 "Could not find client entity with SharedId {:?}",
-                client_update.shared_id
+                update_event.shared_id
             )
         }
     }
@@ -92,7 +109,7 @@ pub struct TempAssetHandles {
     block_mesh_handle: Handle<Mesh>,
     npc_material_handle: Handle<StandardMaterial>,
     player_material_handle: Handle<StandardMaterial>,
-    rect_mesh_handle: Handle<Mesh>
+    rect_mesh_handle: Handle<Mesh>,
 }
 
 pub fn load_temp_asset_handles(
@@ -103,31 +120,35 @@ pub fn load_temp_asset_handles(
 ) {
     let rect_mesh_handle = meshes.add(Rectangle::default());
 
-    let creature_texture_handle = asset_server.load_with_settings(
-        "textures/testface.png",
+    let player_texture_handle = asset_server.load_with_settings(
+        "textures/testrogue.png",
         |settings: &mut ImageLoaderSettings| settings.sampler = ImageSampler::nearest(),
     );
 
     let player_material_handle = materials.add(StandardMaterial {
-        base_color_texture: Some(creature_texture_handle.clone()),
-        alpha_mode: AlphaMode::Mask(0.0),
-        unlit: true,
-        // cull_mode: None,
-        // alpha_mode: AlphaMode::Blend,
-        // perceptual_roughness: 1.0,
-        // reflectance: 0.0,
+        base_color_texture: Some(player_texture_handle.clone()),
+        // alpha_mode: AlphaMode::Mask(0.0),
+        // unlit: true,
+        cull_mode: None,
+        alpha_mode: AlphaMode::Blend,
+        perceptual_roughness: 1.0,
+        reflectance: 0.0,
         ..default()
     });
 
+    let npc_texture_handle = asset_server.load_with_settings(
+        "textures/testgobbo.png",
+        |settings: &mut ImageLoaderSettings| settings.sampler = ImageSampler::nearest(),
+    );
+
     let npc_material_handle = materials.add(StandardMaterial {
-        base_color_texture: Some(creature_texture_handle.clone()),
-        base_color: Color::srgb(1.0, 0.25, 0.25),
-        alpha_mode: AlphaMode::Mask(0.0),
-        unlit: true,
-        // cull_mode: None,
-        // alpha_mode: AlphaMode::Blend,
-        // perceptual_roughness: 1.0,
-        // reflectance: 0.0,
+        base_color_texture: Some(npc_texture_handle.clone()),
+        // alpha_mode: AlphaMode::Mask(0.0),
+        // unlit: true,
+        cull_mode: None,
+        alpha_mode: AlphaMode::Blend,
+        perceptual_roughness: 1.0,
+        reflectance: 0.0,
         ..default()
     });
 
@@ -140,9 +161,9 @@ pub fn load_temp_asset_handles(
 
     let block_material_handle = materials.add(StandardMaterial {
         base_color_texture: Some(block_texture_handle.clone()),
-        unlit: true,
-        // perceptual_roughness: 1.0,
-        // reflectance: 0.0,
+        // unlit: true,
+        perceptual_roughness: 1.0,
+        reflectance: 0.0,
         ..default()
     });
 
@@ -151,7 +172,7 @@ pub fn load_temp_asset_handles(
         block_mesh_handle,
         npc_material_handle,
         player_material_handle,
-        rect_mesh_handle
+        rect_mesh_handle,
     });
 }
 
@@ -165,7 +186,7 @@ pub fn update_billboard_transforms(
         for mut transform in &mut billboards_query {
             transform.look_to(
                 camera_transform.forward().normalize() * Vec3::new(1.0, 0.0, 1.0),
-                camera_transform.up().normalize()
+                camera_transform.up().normalize(),
             );
         }
     }

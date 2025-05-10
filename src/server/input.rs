@@ -10,10 +10,11 @@ use crate::{
 };
 
 pub fn handle_player_input(
+    mut commands: Commands,
     mut player_input_commands: EventReader<PlayerInputCommand>,
     grid_index: Res<SparseGridIndex>,
     mut player_position_query: Query<
-        (&mut GridPosition, &GridShape),
+        (Entity, &GridPosition, &GridShape),
         (With<PlayerController>, With<Collider>),
     >,
     colliders_query: Query<
@@ -23,7 +24,7 @@ pub fn handle_player_input(
 ) -> Result {
     use PlayerInputCommand::*;
 
-    let (mut player_pos, player_shape) = player_position_query.single_mut()?;
+    let (entity, player_pos, player_shape) = player_position_query.single_mut()?;
 
     if let Some(command) = player_input_commands.read().next() {
         match *command {
@@ -34,8 +35,9 @@ pub fn handle_player_input(
 
                     // todo! this is very simplistic/naive, simply doesn't allow 2+ entities in same cell regardless of whether they have Collider component
                     if grid_index.get(&updated_pos).is_none() {
-                        *player_pos = updated_pos;
-                        info!("player moved to {:?}", updated_pos.0);
+                        info!("player moving to {:?}", updated_pos.0);
+
+                        commands.entity(entity).insert(updated_pos);
                     }
                 }
             },

@@ -30,10 +30,14 @@ fn client_sync_start(mut world: DeferredWorld, context: HookContext) {
     if let (Some(&ServerSharedId(shared_id)), Some(&entity_kind), Some(&GridPosition(pos))) = (
         world.get(context.entity),
         world.get::<EntityKind>(context.entity),
-        world.get(context.entity)
+        world.get(context.entity),
     ) {
         info!("Server sending ClientSyncStart");
-        world.send_event(ClientSyncStart { shared_id, entity_kind, pos });
+        world.send_event(ClientSyncStart {
+            shared_id,
+            entity_kind,
+            pos,
+        });
     } else {
         panic!("Added ClientSync to entity with no ServerSharedId and/or EntityKind");
     }
