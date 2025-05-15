@@ -58,6 +58,19 @@ pub fn client_sync_start_handler(
                     MeshMaterial3d(temp_asset_handles.block_material_handle.clone()),
                     Transform::from_translation(pos_vec),
                 )),
+                EntityKind::Brazier => commands.spawn((
+                    ClientSharedId(start_event.shared_id),
+                    Billboard,
+                    Mesh3d(temp_asset_handles.rect_mesh_handle.clone()),
+                    MeshMaterial3d(temp_asset_handles.brazier_material_handle.clone()),
+                    PointLight {
+                        intensity: 800.0,
+                        color: Color::LinearRgba(LinearRgba::new(251.0, 155.0, 114.0, 1.0)),
+                        shadows_enabled: true,
+                        ..default()
+                    },
+                    Transform::from_translation(pos_vec),
+                )),
             };
         }
     }
@@ -107,6 +120,7 @@ pub fn client_sync_stop_handler(mut stop_events: EventReader<ClientSyncStop>) {
 pub struct TempAssetHandles {
     block_material_handle: Handle<StandardMaterial>,
     block_mesh_handle: Handle<Mesh>,
+    brazier_material_handle: Handle<StandardMaterial>,
     npc_material_handle: Handle<StandardMaterial>,
     player_material_handle: Handle<StandardMaterial>,
     rect_mesh_handle: Handle<Mesh>,
@@ -152,6 +166,22 @@ pub fn load_temp_asset_handles(
         ..default()
     });
 
+    let brazier_texture_handle = asset_server.load_with_settings(
+        "textures/testbrazier.png",
+        |settings: &mut ImageLoaderSettings| settings.sampler = ImageSampler::nearest(),
+    );
+
+    let brazier_material_handle = materials.add(StandardMaterial {
+        base_color_texture: Some(brazier_texture_handle.clone()),
+        alpha_mode: AlphaMode::Mask(0.0),
+        unlit: true,
+        // cull_mode: None,
+        // alpha_mode: AlphaMode::Blend,
+        // perceptual_roughness: 1.0,
+        // reflectance: 0.0,
+        ..default()
+    });
+
     let block_mesh_handle = meshes.add(Cuboid::default());
 
     let block_texture_handle = asset_server.load_with_settings(
@@ -170,6 +200,7 @@ pub fn load_temp_asset_handles(
     commands.insert_resource(TempAssetHandles {
         block_material_handle,
         block_mesh_handle,
+        brazier_material_handle,
         npc_material_handle,
         player_material_handle,
         rect_mesh_handle,

@@ -89,4 +89,5 @@ pub enum EntityKind {
     Player,
     Npc,
     Block,
+    Brazier,
 }

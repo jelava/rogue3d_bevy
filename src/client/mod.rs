@@ -1,12 +1,17 @@
 mod components;
 mod input;
+mod palettization;
 mod systems;
 
 use std::f32::consts::PI;
 
 use bevy::{
-    app::{Plugin, PreUpdate, Startup, Update}, prelude::*, window::{Window, WindowPlugin}
+    app::{Plugin, PreUpdate, Startup, Update},
+    image::{ImageLoaderSettings, ImageSampler},
+    prelude::*,
+    window::{Window, WindowPlugin},
 };
+use palettization::{PalettizationEffect, PalettizationPlugin};
 
 use crate::{
     client::{
@@ -33,6 +38,7 @@ impl Plugin for BaseClientPlugin {
         });
 
         app.add_plugins(default_plugins)
+            .add_plugins(PalettizationPlugin)
             .init_resource::<PlayerInputMap>()
             // .add_systems(PreStartup, load_temp_asset_handles)
             .add_systems(Startup, (load_temp_asset_handles, spawn_camera))
@@ -53,20 +59,26 @@ impl Plugin for BaseClientPlugin {
     }
 }
 
-fn spawn_camera(mut commands: Commands) {
-    commands.spawn(Camera3d::default());
+fn spawn_camera(mut commands: Commands, asset_server: Res<AssetServer>) {
+    let lut_image = asset_server.load_with_settings(
+        "textures/palette-luts/unweighted.png",
+        |settings: &mut ImageLoaderSettings| settings.sampler = ImageSampler::nearest(),
+    );
+
+    commands.spawn((
+        Camera3d::default(),
+        Transform::from_translation(Vec3::new(10.0, 5.0, 20.0))
+            .looking_at(Vec3::new(10.0, 1.0, 10.0), Dir3::Y),
+        PalettizationEffect { lut_image },
+    ));
 
     commands.spawn((
         DirectionalLight {
-            illuminance: light_consts::lux::OVERCAST_DAY,
-            shadows_enabled: true,
+            illuminance: light_consts::lux::FULL_MOON_NIGHT,
+            shadows_enabled: false,
             ..default()
         },
-        Transform {
-            translation: Vec3::new(0.0, 10.0, 0.0),
-            rotation: Quat::from_rotation_x(-PI / 4.0),
-            ..default()
-        },
+        Transform::from_translation(Vec3::new(1.0, 5.0, 1.0)).looking_at(Vec3::ZERO, Dir3::Y),
     ));
 }
 

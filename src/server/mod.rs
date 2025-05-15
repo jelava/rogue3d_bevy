@@ -118,6 +118,42 @@ fn generate_test_level(mut commands: Commands) {
         Collider,
         // Sight::new(10),
     ));
+
+    commands.spawn((
+        ServerSharedId::new(),
+        EntityKind::Brazier,
+        ClientSync,
+        GridPosition(IVec3::new(10, 1, 15)),
+        GridShape::SingleBlock,
+        Collider,
+    ));
+
+    commands.spawn((
+        ServerSharedId::new(),
+        EntityKind::Brazier,
+        ClientSync,
+        GridPosition(IVec3::new(10, 1, 5)),
+        GridShape::SingleBlock,
+        Collider,
+    ));
+
+    commands.spawn((
+        ServerSharedId::new(),
+        EntityKind::Brazier,
+        ClientSync,
+        GridPosition(IVec3::new(15, 1, 10)),
+        GridShape::SingleBlock,
+        Collider,
+    ));
+
+    commands.spawn((
+        ServerSharedId::new(),
+        EntityKind::Brazier,
+        ClientSync,
+        GridPosition(IVec3::new(5, 1, 10)),
+        GridShape::SingleBlock,
+        Collider,
+    ));
 }
 
 pub struct LocalServerPlugin;
