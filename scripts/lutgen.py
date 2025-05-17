@@ -5,11 +5,13 @@ from PIL import Image
 palette = Image.open("32rogues-palette-rgb.png")
 palette_colors = palette.getcolors()
 
-lut_dimension = 32
+lut_dimension = 12
 max_y = (lut_dimension - 1) + (lut_dimension - 1) * lut_dimension
 
-linear_lut = Image.new("RGB", (lut_dimension, lut_dimension * lut_dimension))
-palette_lut = Image.new("RGB", (lut_dimension, lut_dimension * lut_dimension))
+lut_size = (lut_dimension, lut_dimension * lut_dimension)
+linear_lut = Image.new("RGB", lut_size)
+#srgb_lut = Image.new("RGB", lut_size)
+palette_lut = Image.new("RGB", lut_size)
 
 distances = []
 
@@ -20,6 +22,8 @@ for r in range(0, lut_dimension):
             lin_color = ((r * 255) // (lut_dimension - 1), (g * 255) // (lut_dimension - 1), (b * 255) // (lut_dimension - 1))
 
             linear_lut.putpixel(pixel, lin_color)
+
+            #srgb_color = 
 
             min_dist = -1
             closest_color = (0, 0, 0)
@@ -51,3 +55,4 @@ else:
 
 #print(distances)
 #print("-----")
+

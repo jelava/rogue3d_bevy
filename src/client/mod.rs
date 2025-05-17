@@ -61,7 +61,7 @@ impl Plugin for BaseClientPlugin {
 
 fn spawn_camera(mut commands: Commands, asset_server: Res<AssetServer>) {
     let lut_image = asset_server.load_with_settings(
-        "textures/palette-luts/unweighted.png",
+        "textures/palette-luts/converted.png",
         |settings: &mut ImageLoaderSettings| settings.sampler = ImageSampler::nearest(),
     );
 
