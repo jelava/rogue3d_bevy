@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use bevy_rand::{plugin::EntropyPlugin, prelude::WyRand};
 use components::{ClientSync, Collider, PlayerController};
+use senses::sight::{update_sight, ClientSyncSight, Sight};
 
 use crate::{
     common::{
@@ -24,7 +25,7 @@ impl Plugin for BaseServerPlugin {
         app.add_plugins(EntropyPlugin::<WyRand>::default())
             // .insert_resource(FloorGenerationParams::default())
             .add_systems(Startup, generate_test_level)
-            // .add_systems(PreUpdate, (update_senses, update_knowledge).chain())
+            .add_systems(PreUpdate, update_sight)
             .add_systems(Update, handle_player_input)
             .add_systems(PostUpdate, client_sync_update);
     }
@@ -50,7 +51,7 @@ fn generate_test_level(mut commands: Commands) {
             commands.spawn((
                 ServerSharedId::new(),
                 EntityKind::Block,
-                ClientSync,
+                // ClientSync,
                 GridPosition(IVec3::new(x, 0, z)),
                 GridShape::SingleBlock,
                 Collider,
@@ -60,7 +61,7 @@ fn generate_test_level(mut commands: Commands) {
                 commands.spawn((
                     ServerSharedId::new(),
                     EntityKind::Block,
-                    ClientSync,
+                    // ClientSync,
                     GridPosition(IVec3::new(x, 1, z)),
                     GridShape::SingleBlock,
                     Collider,
@@ -69,7 +70,7 @@ fn generate_test_level(mut commands: Commands) {
                 commands.spawn((
                     ServerSharedId::new(),
                     EntityKind::Block,
-                    ClientSync,
+                    // ClientSync,
                     GridPosition(IVec3::new(x, 2, z)),
                     GridShape::SingleBlock,
                     Collider,
@@ -81,28 +82,30 @@ fn generate_test_level(mut commands: Commands) {
     commands.spawn((
         ServerSharedId::new(),
         EntityKind::Player,
-        ClientSync,
+        // ClientSync,
         PlayerController,
         GridPosition(IVec3::new(10, 1, 10)),
         GridShape::SingleBlock,
         Collider,
-        // Sight::new(10),
+        Sight::new(4),
+        ClientSyncSight,
     ));
 
     commands.spawn((
         ServerSharedId::new(),
         EntityKind::Npc,
-        ClientSync,
+        // ClientSync,
         GridPosition(IVec3::new(5, 1, 7)),
         GridShape::SingleBlock,
         Collider,
-        // Sight::new(10),
+        Sight::new(4),
+        ClientSyncSight,
     ));
 
     commands.spawn((
         ServerSharedId::new(),
         EntityKind::Npc,
-        ClientSync,
+        // ClientSync,
         GridPosition(IVec3::new(12, 1, 14)),
         GridShape::SingleBlock,
         Collider,
@@ -112,7 +115,7 @@ fn generate_test_level(mut commands: Commands) {
     commands.spawn((
         ServerSharedId::new(),
         EntityKind::Npc,
-        ClientSync,
+        // ClientSync,
         GridPosition(IVec3::new(17, 1, 4)),
         GridShape::SingleBlock,
         Collider,
@@ -122,7 +125,7 @@ fn generate_test_level(mut commands: Commands) {
     commands.spawn((
         ServerSharedId::new(),
         EntityKind::Brazier,
-        ClientSync,
+        // ClientSync,
         GridPosition(IVec3::new(10, 1, 15)),
         GridShape::SingleBlock,
         Collider,
@@ -131,7 +134,7 @@ fn generate_test_level(mut commands: Commands) {
     commands.spawn((
         ServerSharedId::new(),
         EntityKind::Brazier,
-        ClientSync,
+        // ClientSync,
         GridPosition(IVec3::new(10, 1, 5)),
         GridShape::SingleBlock,
         Collider,
@@ -140,7 +143,7 @@ fn generate_test_level(mut commands: Commands) {
     commands.spawn((
         ServerSharedId::new(),
         EntityKind::Brazier,
-        ClientSync,
+        // ClientSync,
         GridPosition(IVec3::new(15, 1, 10)),
         GridShape::SingleBlock,
         Collider,
@@ -149,7 +152,7 @@ fn generate_test_level(mut commands: Commands) {
     commands.spawn((
         ServerSharedId::new(),
         EntityKind::Brazier,
-        ClientSync,
+        // ClientSync,
         GridPosition(IVec3::new(5, 1, 10)),
         GridShape::SingleBlock,
         Collider,

@@ -28,17 +28,17 @@ pub fn client_sync_start_handler(
         );
 
         if let Some(&entity) = shared_id_index.get(&ClientSharedId(start_event.shared_id)) {
-            // the entity already exists on client side, update the transform
+            // the entity is no longer unsynced
+            commands.entity(entity).remove::<Unsynced>();
 
-            // is this actually going to change the transform?
             let mut transform = transform_query.get_mut(entity).unwrap();
-
             transform.translation = pos_vec;
         } else {
             // no entity with a matching shared ID exists in the client, so spawn it
 
             match start_event.entity_kind {
                 EntityKind::Player => commands.spawn((
+                    EntityKind::Player,
                     ClientSharedId(start_event.shared_id),
                     Billboard,
                     Mesh3d(temp_asset_handles.rect_mesh_handle.clone()),
@@ -46,6 +46,7 @@ pub fn client_sync_start_handler(
                     Transform::from_translation(pos_vec),
                 )),
                 EntityKind::Npc => commands.spawn((
+                    EntityKind::Npc,
                     ClientSharedId(start_event.shared_id),
                     Billboard,
                     Mesh3d(temp_asset_handles.rect_mesh_handle.clone()),
@@ -53,12 +54,14 @@ pub fn client_sync_start_handler(
                     Transform::from_translation(pos_vec),
                 )),
                 EntityKind::Block => commands.spawn((
+                    EntityKind::Block,
                     ClientSharedId(start_event.shared_id),
                     Mesh3d(temp_asset_handles.block_mesh_handle.clone()),
                     MeshMaterial3d(temp_asset_handles.block_material_handle.clone()),
                     Transform::from_translation(pos_vec),
                 )),
                 EntityKind::Brazier => commands.spawn((
+                    EntityKind::Brazier,
                     ClientSharedId(start_event.shared_id),
                     Billboard,
                     Mesh3d(temp_asset_handles.rect_mesh_handle.clone()),
@@ -78,7 +81,6 @@ pub fn client_sync_start_handler(
 
 // todo: need a more generalized way of handling updates
 pub fn client_sync_update_handler(
-    mut commands: Commands,
     shared_id_index: Res<ClientSharedIdIndex>,
     mut update_events: EventReader<ClientSyncUpdate>,
     mut transform_query: Query<&mut Transform, With<ClientSharedId>>,
@@ -106,12 +108,25 @@ pub fn client_sync_update_handler(
     }
 }
 
-pub fn client_sync_stop_handler(mut stop_events: EventReader<ClientSyncStop>) {
-    for _ in stop_events.read() {
+pub fn client_sync_stop_handler(
+    mut commands: Commands,
+    shared_id_index: Res<ClientSharedIdIndex>,
+    mut stop_events: EventReader<ClientSyncStop>,
+) {
+    for stop_event in stop_events.read() {
         info!("Client received ClientSyncStop");
         // todo! despawn here? what about cases where entity is not necessarily fully despawned on
         // server but just temporarily not sending updates to client (i.e. entity that is no longer
         // seen by player)
+
+        if let Some(&entity) = shared_id_index.get(&ClientSharedId(stop_event.shared_id)) {
+            commands.entity(entity).insert(Unsynced);
+        } else {
+            panic!(
+                "Could not find client entity with SharedId {:?}",
+                stop_event.shared_id
+            )
+        }
     }
 }
 
@@ -124,6 +139,10 @@ pub struct TempAssetHandles {
     npc_material_handle: Handle<StandardMaterial>,
     player_material_handle: Handle<StandardMaterial>,
     rect_mesh_handle: Handle<Mesh>,
+    unsynced_block_material_handle: Handle<StandardMaterial>,
+    unsynced_brazier_material_handle: Handle<StandardMaterial>,
+    unsynced_npc_material_handle: Handle<StandardMaterial>,
+    unsynced_player_material_handle: Handle<StandardMaterial>,
 }
 
 pub fn load_temp_asset_handles(
@@ -132,82 +151,113 @@ pub fn load_temp_asset_handles(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let rect_mesh_handle = meshes.add(Rectangle::default());
-
     let player_texture_handle = asset_server.load_with_settings(
         "textures/testrogue.png",
         |settings: &mut ImageLoaderSettings| settings.sampler = ImageSampler::nearest(),
     );
-
-    let player_material_handle = materials.add(StandardMaterial {
-        base_color_texture: Some(player_texture_handle.clone()),
-        // alpha_mode: AlphaMode::Mask(0.0),
-        // unlit: true,
-        cull_mode: None,
-        alpha_mode: AlphaMode::Blend,
-        perceptual_roughness: 1.0,
-        reflectance: 0.0,
-        ..default()
-    });
 
     let npc_texture_handle = asset_server.load_with_settings(
         "textures/testgobbo.png",
         |settings: &mut ImageLoaderSettings| settings.sampler = ImageSampler::nearest(),
     );
 
-    let npc_material_handle = materials.add(StandardMaterial {
-        base_color_texture: Some(npc_texture_handle.clone()),
-        // alpha_mode: AlphaMode::Mask(0.0),
-        // unlit: true,
-        cull_mode: None,
-        alpha_mode: AlphaMode::Blend,
-        perceptual_roughness: 1.0,
-        reflectance: 0.0,
-        ..default()
-    });
-
     let brazier_texture_handle = asset_server.load_with_settings(
         "textures/testbrazier.png",
         |settings: &mut ImageLoaderSettings| settings.sampler = ImageSampler::nearest(),
     );
-
-    let brazier_material_handle = materials.add(StandardMaterial {
-        base_color_texture: Some(brazier_texture_handle.clone()),
-        alpha_mode: AlphaMode::Mask(0.0),
-        unlit: true,
-        // cull_mode: None,
-        // alpha_mode: AlphaMode::Blend,
-        // perceptual_roughness: 1.0,
-        // reflectance: 0.0,
-        ..default()
-    });
-
-    let block_mesh_handle = meshes.add(Cuboid::default());
 
     let block_texture_handle = asset_server.load_with_settings(
         "textures/testdots_tiny.png",
         |settings: &mut ImageLoaderSettings| settings.sampler = ImageSampler::nearest(),
     );
 
-    let block_material_handle = materials.add(StandardMaterial {
-        base_color_texture: Some(block_texture_handle.clone()),
-        // unlit: true,
-        perceptual_roughness: 1.0,
-        reflectance: 0.0,
-        ..default()
-    });
+    let unsynced_base_color = Color::linear_rgb(0.2, 0.4, 0.4);
 
     commands.insert_resource(TempAssetHandles {
-        block_material_handle,
-        block_mesh_handle,
-        brazier_material_handle,
-        npc_material_handle,
-        player_material_handle,
-        rect_mesh_handle,
+        block_material_handle: materials.add(StandardMaterial {
+            base_color_texture: Some(block_texture_handle.clone()),
+            // unlit: true,
+            perceptual_roughness: 1.0,
+            reflectance: 0.0,
+            ..default()
+        }),
+        block_mesh_handle: meshes.add(Cuboid::default()),
+        brazier_material_handle: materials.add(StandardMaterial {
+            base_color_texture: Some(brazier_texture_handle.clone()),
+            alpha_mode: AlphaMode::Mask(0.0),
+            unlit: true,
+            // cull_mode: None,
+            // alpha_mode: AlphaMode::Blend,
+            // perceptual_roughness: 1.0,
+            // reflectance: 0.0,
+            ..default()
+        }),
+        npc_material_handle: materials.add(StandardMaterial {
+            base_color_texture: Some(npc_texture_handle.clone()),
+            // alpha_mode: AlphaMode::Mask(0.0),
+            // unlit: true,
+            cull_mode: None,
+            alpha_mode: AlphaMode::Blend,
+            perceptual_roughness: 1.0,
+            reflectance: 0.0,
+            ..default()
+        }),
+        player_material_handle: materials.add(StandardMaterial {
+            base_color_texture: Some(player_texture_handle.clone()),
+            // alpha_mode: AlphaMode::Mask(0.0),
+            // unlit: true,
+            cull_mode: None,
+            alpha_mode: AlphaMode::Blend,
+            perceptual_roughness: 1.0,
+            reflectance: 0.0,
+            ..default()
+        }),
+        rect_mesh_handle: meshes.add(Rectangle::default()),
+        unsynced_block_material_handle: materials.add(StandardMaterial {
+            base_color: unsynced_base_color,
+            base_color_texture: Some(block_texture_handle.clone()),
+            // unlit: true,
+            perceptual_roughness: 1.0,
+            reflectance: 0.0,
+            ..default()
+        }),
+        unsynced_brazier_material_handle: materials.add(StandardMaterial {
+            base_color: unsynced_base_color,
+            base_color_texture: Some(brazier_texture_handle.clone()),
+            alpha_mode: AlphaMode::Mask(0.0),
+            unlit: true,
+            // cull_mode: None,
+            // alpha_mode: AlphaMode::Blend,
+            // perceptual_roughness: 1.0,
+            // reflectance: 0.0,
+            ..default()
+        }),
+        unsynced_npc_material_handle: materials.add(StandardMaterial {
+            base_color: unsynced_base_color,
+            base_color_texture: Some(npc_texture_handle.clone()),
+            // alpha_mode: AlphaMode::Mask(0.0),
+            // unlit: true,
+            cull_mode: None,
+            alpha_mode: AlphaMode::Blend,
+            perceptual_roughness: 1.0,
+            reflectance: 0.0,
+            ..default()
+        }),
+        unsynced_player_material_handle: materials.add(StandardMaterial {
+            base_color: unsynced_base_color,
+            base_color_texture: Some(player_texture_handle.clone()),
+            // alpha_mode: AlphaMode::Mask(0.0),
+            // unlit: true,
+            cull_mode: None,
+            alpha_mode: AlphaMode::Blend,
+            perceptual_roughness: 1.0,
+            reflectance: 0.0,
+            ..default()
+        }),
     });
 }
 
-// misc tech stuff
+// misc graphical stuff
 
 pub fn update_billboard_transforms(
     camera_transform_query: Query<&Transform, With<Camera>>,
@@ -220,5 +270,61 @@ pub fn update_billboard_transforms(
                 camera_transform.up().normalize(),
             );
         }
+    }
+}
+
+pub fn update_unsynced_material_color(
+    trigger: Trigger<OnAdd, Unsynced>,
+    temp_asset_handles: Res<TempAssetHandles>,
+    // mut materials: ResMut<Assets<StandardMaterial>>,
+    mut material_handle_query: Query<
+        (&mut MeshMaterial3d<StandardMaterial>, &EntityKind),
+        (With<ClientSharedId>, With<Unsynced>),
+    >,
+) {
+    info!("mat update (unsynced)");
+
+    if let Ok((mut handle, &entity_kind)) = material_handle_query.get_mut(trigger.target()) {
+        *handle = match entity_kind {
+            EntityKind::Block => {
+                MeshMaterial3d(temp_asset_handles.unsynced_block_material_handle.clone())
+            }
+            EntityKind::Player => {
+                MeshMaterial3d(temp_asset_handles.unsynced_player_material_handle.clone())
+            }
+            EntityKind::Npc => {
+                MeshMaterial3d(temp_asset_handles.unsynced_npc_material_handle.clone())
+            }
+            EntityKind::Brazier => {
+                MeshMaterial3d(temp_asset_handles.unsynced_brazier_material_handle.clone())
+            }
+        };
+    } else {
+        warn!("No material handle for entity?");
+    }
+}
+
+pub fn update_resynced_material_color(
+    trigger: Trigger<OnRemove, Unsynced>,
+    temp_asset_handles: Res<TempAssetHandles>,
+    // mut materials: ResMut<Assets<StandardMaterial>>,
+    mut material_handle_query: Query<
+        (&mut MeshMaterial3d<StandardMaterial>, &EntityKind),
+        (With<ClientSharedId>, With<Unsynced>),
+    >,
+) {
+    info!("mat update (resynced)");
+
+    if let Ok((mut handle, &entity_kind)) = material_handle_query.get_mut(trigger.target()) {
+        *handle = match entity_kind {
+            EntityKind::Block => MeshMaterial3d(temp_asset_handles.block_material_handle.clone()),
+            EntityKind::Player => MeshMaterial3d(temp_asset_handles.player_material_handle.clone()),
+            EntityKind::Npc => MeshMaterial3d(temp_asset_handles.npc_material_handle.clone()),
+            EntityKind::Brazier => {
+                MeshMaterial3d(temp_asset_handles.brazier_material_handle.clone())
+            }
+        };
+    } else {
+        warn!("No material handle for entity?");
     }
 }

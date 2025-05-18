@@ -55,7 +55,9 @@ impl Plugin for BaseClientPlugin {
                         .chain(),
                     (handle_camera_input, update_billboard_transforms).chain(),
                 ),
-            );
+            )
+            .add_observer(update_unsynced_material_color)
+            .add_observer(update_resynced_material_color);
     }
 }
 
