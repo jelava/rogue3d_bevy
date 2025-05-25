@@ -4,10 +4,10 @@ use bevy::{ecs::query::Has, math::IVec3, platform::collections::HashSet, prelude
 
 use crate::{
     common::{
-        grid::{GridPosition, GridShape, SparseGridIndex},
+        grid::{GridPosition, SparseGridIndex},
         index::ComponentIndex,
     },
-    server::components::ClientSync,
+    server::server_sync::ClientSync,
 };
 
 /// Anything that can be seen (remove to make invisible!)

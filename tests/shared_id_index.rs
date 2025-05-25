@@ -57,6 +57,7 @@ fn check_init(index: Res<TestSharedIdIndex>, query: Query<(Entity, &TestSharedId
     assert_eq!(count, 3);
 }
 
+// Changing IDs shouldn't really happen in the game in practice, but it's worth testing that it doesn't break everything
 fn modify_ids(
     mut commands: Commands,
     index: Res<TestSharedIdIndex>,

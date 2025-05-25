@@ -1,9 +1,8 @@
+mod client_sync;
 mod components;
 mod input;
 mod palettization;
 mod systems;
-
-use std::f32::consts::PI;
 
 use bevy::{
     app::{Plugin, PreUpdate, Startup, Update},
@@ -11,6 +10,7 @@ use bevy::{
     prelude::*,
     window::{Window, WindowPlugin},
 };
+use client_sync::LocalClientSyncPlugin;
 use palettization::{PalettizationEffect, PalettizationPlugin};
 
 use crate::{
@@ -42,22 +42,15 @@ impl Plugin for BaseClientPlugin {
             .init_resource::<PlayerInputMap>()
             // .add_systems(PreStartup, load_temp_asset_handles)
             .add_systems(Startup, (load_temp_asset_handles, spawn_camera))
-            .add_systems(PreUpdate, client_sync_update_handler)
             .add_systems(
                 Update,
                 (
                     player_kb_input_mapper,
-                    (
-                        client_sync_start_handler,
-                        client_sync_update_handler,
-                        client_sync_stop_handler,
-                    )
-                        .chain(),
                     (handle_camera_input, update_billboard_transforms).chain(),
                 ),
-            )
-            .add_observer(update_unsynced_material_color)
-            .add_observer(update_resynced_material_color);
+            );
+        // .add_observer(update_unsynced_material_color)
+        // .add_observer(update_resynced_material_color);
     }
 }
 
@@ -88,20 +81,6 @@ pub struct LocalClientPlugin;
 
 impl Plugin for LocalClientPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_plugins(BaseClientPlugin)
-            .add_plugins(ClientSharedIdIndexPlugin::default());
+        app.add_plugins((BaseClientPlugin, LocalClientSyncPlugin));
     }
 }
-
-#[derive(Component, Copy, Clone, PartialEq, Eq, Hash)]
-struct ClientSharedId(SharedId);
-
-impl From<SharedId> for ClientSharedId {
-    fn from(value: SharedId) -> Self {
-        Self(value)
-    }
-}
-
-type ClientSharedIdIndex = UniqueSparseComponentIndex<ClientSharedId>;
-
-type ClientSharedIdIndexPlugin = UniqueComponentIndexPlugin<ClientSharedId, ClientSharedIdIndex>;
