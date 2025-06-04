@@ -100,7 +100,7 @@ fn generate_test_level(mut commands: Commands) {
         GridShape::SingleBlock,
         Collider,
         Sight::new(4),
-        ClientSyncSight
+        ClientSyncSight,
     ));
 
     commands.spawn((

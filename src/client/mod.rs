@@ -1,4 +1,4 @@
-mod client_sync;
+pub mod client_sync;
 mod components;
 mod input;
 mod palettization;
@@ -6,6 +6,7 @@ mod systems;
 
 use bevy::{
     app::{Plugin, PreUpdate, Startup, Update},
+    core_pipeline::tonemapping::Tonemapping,
     image::{ImageLoaderSettings, ImageSampler},
     prelude::*,
     window::{Window, WindowPlugin},
@@ -37,11 +38,10 @@ impl Plugin for BaseClientPlugin {
             ..default()
         });
 
-        app.add_plugins(default_plugins)
-            .add_plugins(PalettizationPlugin)
+        app.add_plugins((default_plugins, PalettizationPlugin))
             .init_resource::<PlayerInputMap>()
             // .add_systems(PreStartup, load_temp_asset_handles)
-            .add_systems(Startup, (load_temp_asset_handles, spawn_camera))
+            .add_systems(Startup, spawn_camera)
             .add_systems(
                 Update,
                 (
@@ -57,13 +57,17 @@ impl Plugin for BaseClientPlugin {
 fn spawn_camera(mut commands: Commands, asset_server: Res<AssetServer>) {
     let lut_image = asset_server.load_with_settings(
         "textures/palette-luts/converted.png",
-        |settings: &mut ImageLoaderSettings| settings.sampler = ImageSampler::nearest(),
+        |settings: &mut ImageLoaderSettings| {
+            settings.sampler = ImageSampler::nearest();
+            // settings.is_srgb = false;
+        },
     );
 
     commands.spawn((
         Camera3d::default(),
         Transform::from_translation(Vec3::new(10.0, 5.0, 20.0))
             .looking_at(Vec3::new(10.0, 1.0, 10.0), Dir3::Y),
+        Tonemapping::None,
         PalettizationEffect { lut_image },
     ));
 

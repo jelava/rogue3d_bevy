@@ -1,4 +1,7 @@
-use bevy::prelude::*;
+use bevy::{
+    pbr::{NotShadowCaster, NotShadowReceiver},
+    prelude::*,
+};
 
 use crate::{
     client::components::Billboard,
@@ -10,16 +13,16 @@ use crate::{
     },
 };
 
-use super::systems::TempAssetHandles;
+use super::systems::{load_temp_asset_handles, TempAssetHandles};
 
 pub struct LocalClientSyncPlugin;
 
 impl Plugin for LocalClientSyncPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(ClientSharedIdIndexPlugin::default())
-            // .add_systems(PreUpdate, client_sync_update_handler)
+            .add_systems(PreStartup, load_temp_asset_handles)
             .add_systems(
-                Update,
+                PreUpdate,
                 (
                     client_sync_start_handler,
                     client_sync_update_handler,
@@ -33,7 +36,7 @@ impl Plugin for LocalClientSyncPlugin {
 }
 
 #[derive(Component, Copy, Clone, PartialEq, Eq, Hash)]
-struct ClientSharedId(SharedId);
+pub struct ClientSharedId(SharedId);
 
 impl From<SharedId> for ClientSharedId {
     fn from(value: SharedId) -> Self {
@@ -41,9 +44,10 @@ impl From<SharedId> for ClientSharedId {
     }
 }
 
-type ClientSharedIdIndex = UniqueSparseComponentIndex<ClientSharedId>;
+pub type ClientSharedIdIndex = UniqueSparseComponentIndex<ClientSharedId>;
 
-type ClientSharedIdIndexPlugin = UniqueComponentIndexPlugin<ClientSharedId, ClientSharedIdIndex>;
+pub type ClientSharedIdIndexPlugin =
+    UniqueComponentIndexPlugin<ClientSharedId, ClientSharedIdIndex>;
 
 #[derive(Component)]
 pub struct Unsynced;
@@ -103,6 +107,9 @@ pub fn client_sync_start_handler(
                     Billboard,
                     Mesh3d(temp_asset_handles.rect_mesh_handle.clone()),
                     MeshMaterial3d(temp_asset_handles.brazier_material_handle.clone()),
+                    NotShadowCaster,
+                    NotShadowReceiver,
+                    // todo: the light should probably be a separate child entity with a slightly offset position from the mesh
                     PointLight {
                         intensity: 800.0,
                         color: Color::LinearRgba(LinearRgba::new(251.0, 155.0, 114.0, 1.0)),
