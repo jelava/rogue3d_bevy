@@ -1,5 +1,7 @@
 mod common;
 
+use std::default;
+
 use common::*;
 
 use bevy::prelude::*;
@@ -89,9 +91,9 @@ fn test_sync_start_handler(
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Default, States)]
-enum SyncMovementTestState {
+enum SyncMovementState {
     #[default]
-    Init,
+    CheckInit,
     Move,
     CheckMove,
 }
@@ -105,22 +107,22 @@ fn sync_movement_test() {
             TestClientSyncPlugin,
             LocalServerSyncPlugin,
         ))
-        .init_state::<SyncMovementTestState>()
+        .init_state::<SyncMovementState>()
         .add_systems(Startup, init)
         .add_systems(
             Update,
             (
-                check_init.run_if(in_state(SyncMovementTestState::Init)),
-                move_entity.run_if(in_state(SyncMovementTestState::Move)),
+                check_init.run_if(in_state(SyncMovementState::CheckInit)),
+                move_entity.run_if(in_state(SyncMovementState::Move)),
                 (check_move, end_test)
                     .chain()
-                    .run_if(in_state(SyncMovementTestState::CheckMove)),
+                    .run_if(in_state(SyncMovementState::CheckMove)),
             ),
         )
         .run();
 
     fn init(mut commands: Commands) {
-        // EntityKind required here for now due to lazy/simplistic implementation, will change later
+        // todo: EntityKind required here for now due to lazy/simplistic implementation, will change later
         commands.spawn((
             ServerSharedId::new(),
             ClientSync,
@@ -132,7 +134,7 @@ fn sync_movement_test() {
     fn check_init(
         client_query: Query<(&ClientSharedId, &Transform)>,
         // server_query: Query<&ServerSharedId>,
-        mut next_state: ResMut<NextState<SyncMovementTestState>>,
+        mut next_state: ResMut<NextState<SyncMovementState>>,
     ) {
         let (client_id, transform) = client_query
             .single()
@@ -143,13 +145,13 @@ fn sync_movement_test() {
         // assert_eq!(client_id.0, server_id.0);
         assert_eq!(transform.translation, Vec3::ZERO);
 
-        next_state.set(SyncMovementTestState::Move);
+        next_state.set(SyncMovementState::Move);
     }
 
     fn move_entity(
         mut commands: Commands,
         server_entity_query: Query<Entity, With<ServerSharedId>>,
-        mut next_state: ResMut<NextState<SyncMovementTestState>>,
+        mut next_state: ResMut<NextState<SyncMovementState>>,
     ) {
         let entity = server_entity_query.single().unwrap();
 
@@ -157,7 +159,7 @@ fn sync_movement_test() {
             .entity(entity)
             .insert(GridPosition(IVec3::new(1, 1, 1)));
 
-        next_state.set(SyncMovementTestState::CheckMove);
+        next_state.set(SyncMovementState::CheckMove);
     }
 
     fn check_move(client_query: Query<&Transform, With<ClientSharedId>>) {
@@ -167,7 +169,103 @@ fn sync_movement_test() {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Default, States)]
+enum AddRemoveSyncState {
+    // CheckInit,
+    #[default]
+    AddSync,
+    // CheckAdd,
+    RemoveSync,
+    // CheckRemove,
+    AddAgain,
+    CheckAddAgain
+}
+
 #[test]
 fn add_remove_sync_test() {
-    todo!();
+    App::new()
+        .add_plugins((
+            BaseTestPlugins,
+            LocalBridgePlugin,
+            TestClientSyncPlugin,
+            LocalServerSyncPlugin,
+        ))
+        .init_state::<AddRemoveSyncState>()
+        .add_systems(Startup, init)
+        .add_systems(
+            Update,
+            (
+                add_sync.run_if(in_state(AddRemoveSyncState::AddSync)),
+                (check_add, remove_sync)
+                    .chain()
+                    .run_if(in_state(AddRemoveSyncState::RemoveSync)),
+                (check_remove, add_again)
+                    .chain()
+                    .run_if(in_state(AddRemoveSyncState::AddAgain)),
+                (check_add, end_test)
+                    .chain()
+                    .run_if(in_state(AddRemoveSyncState::CheckAddAgain)),
+            ),
+        )
+        .run();
+
+    fn init(mut commands: Commands) {
+        // todo: EntityKind required here for now due to lazy/simplistic implementation, will change later
+        commands.spawn((
+            ServerSharedId::new(),
+            GridPosition(IVec3::ZERO),
+            EntityKind::Npc,
+        ));
+    }
+
+    fn add_sync(
+        mut commands: Commands,
+        server_query: Query<Entity, With<ServerSharedId>>,
+        mut next_state: ResMut<NextState<AddRemoveSyncState>>
+    ) {
+        let entity = server_query.single().unwrap();
+
+        commands.entity(entity)
+            .insert(ClientSync);
+
+        next_state.set(AddRemoveSyncState::RemoveSync);
+    }
+
+    fn check_add(client_query: Query<Has<Unsynced>, With<ClientSharedId>>) {
+        let has_unsynced = client_query.single().unwrap();
+        assert!(!has_unsynced);
+
+        // todo: check that client and server IDs match
+    }
+
+    fn remove_sync(
+        mut commands: Commands,
+        server_query: Query<Entity, With<ServerSharedId>>,
+        mut next_state: ResMut<NextState<AddRemoveSyncState>>
+    ) {
+        let entity = server_query.single().unwrap();
+
+        commands.entity(entity)
+            .remove::<ClientSync>();
+
+        next_state.set(AddRemoveSyncState::AddAgain);
+    }
+
+    fn check_remove(client_query: Query<Has<Unsynced>, With<ClientSharedId>>) {
+        let has_unsynced = client_query.single().unwrap();
+        assert!(has_unsynced);
+    }
+
+    fn add_again(
+        mut commands: Commands,
+        server_query: Query<Entity, With<ServerSharedId>>,
+        mut next_state: ResMut<NextState<AddRemoveSyncState>>
+    ) {
+        let entity = server_query.single().unwrap();
+
+        commands.entity(entity)
+            .insert(ClientSync);
+
+        next_state.set(AddRemoveSyncState::CheckAddAgain);
+    }
 }
