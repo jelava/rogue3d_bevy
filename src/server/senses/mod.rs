@@ -1,1 +1,1 @@
-pub mod vision;
+pub mod sight;
