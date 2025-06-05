@@ -17,10 +17,10 @@ pub fn handle_player_input(
         (Entity, &GridPosition, &GridShape),
         (With<PlayerController>, With<Collider>),
     >,
-    colliders_query: Query<
-        (&GridPosition, &GridShape),
-        (With<Collider>, Without<PlayerController>),
-    >,
+    // colliders_query: Query<
+    //     (&GridPosition, &GridShape),
+    //     (With<Collider>, Without<PlayerController>),
+    // >,
 ) -> Result {
     use PlayerInputCommand::*;
 

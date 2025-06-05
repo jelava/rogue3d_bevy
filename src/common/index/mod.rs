@@ -60,6 +60,8 @@ impl<C: Component + Eq + Hash> ComponentIndex<C> for SparseComponentIndex<C> {
     }
 }
 
+/// Generic plugin for setting up a ComponentIndex. Handles initializing the index as a resource
+/// and registering the component hooks to maintain the index.
 pub struct ComponentIndexPlugin<C: Component + Copy + Clone, I: ComponentIndex<C> + Default>(
     PhantomData<(C, I)>,
 );
@@ -94,7 +96,7 @@ fn register_component_index_hooks<C: Component + Copy + Clone, I: ComponentIndex
             let component = *world.get(entity).unwrap();
             world.resource_mut::<I>().remove(&component, entity);
 
-            // The insert hook is guaranteed to run after this if the component is being replaced and
-            // it will handle re-adding the entity to the index for the new component value
+            // The insert hook is guaranteed to run after this if the component is being replaced
+            // and it will handle re-adding the entity to the index for the new component value
         });
 }

@@ -77,6 +77,7 @@ fn register_unique_component_index_hooks<
             let result = world.resource_mut::<I>().try_insert(component, entity);
 
             // todo: use the result in a better way and don't panic (at least in release builds)
+            // maybe send an event indicating the error instead to give a chance to react/handle it?
             if result.is_err() {
                 panic!("Tried to insert duplicate component into a unique component index");
             }

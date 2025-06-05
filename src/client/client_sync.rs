@@ -4,7 +4,10 @@ use bevy::{
 };
 
 use crate::{
-    client::components::Billboard,
+    client::{
+        components::Billboard,
+        systems::{load_temp_asset_handles, TempAssetHandles},
+    },
     common::{
         index::unique::{
             UniqueComponentIndex, UniqueComponentIndexPlugin, UniqueSparseComponentIndex,
@@ -12,8 +15,6 @@ use crate::{
         ClientSyncStart, ClientSyncStop, ClientSyncUpdate, EntityKind, SharedId,
     },
 };
-
-use super::systems::{load_temp_asset_handles, TempAssetHandles};
 
 pub struct LocalClientSyncPlugin;
 

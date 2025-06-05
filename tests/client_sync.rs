@@ -178,7 +178,7 @@ enum AddRemoveSyncState {
     RemoveSync,
     // CheckRemove,
     AddAgain,
-    CheckAddAgain
+    CheckAddAgain,
 }
 
 #[test]
@@ -221,12 +221,11 @@ fn add_remove_sync_test() {
     fn add_sync(
         mut commands: Commands,
         server_query: Query<Entity, With<ServerSharedId>>,
-        mut next_state: ResMut<NextState<AddRemoveSyncState>>
+        mut next_state: ResMut<NextState<AddRemoveSyncState>>,
     ) {
         let entity = server_query.single().unwrap();
 
-        commands.entity(entity)
-            .insert(ClientSync);
+        commands.entity(entity).insert(ClientSync);
 
         next_state.set(AddRemoveSyncState::RemoveSync);
     }
@@ -241,12 +240,11 @@ fn add_remove_sync_test() {
     fn remove_sync(
         mut commands: Commands,
         server_query: Query<Entity, With<ServerSharedId>>,
-        mut next_state: ResMut<NextState<AddRemoveSyncState>>
+        mut next_state: ResMut<NextState<AddRemoveSyncState>>,
     ) {
         let entity = server_query.single().unwrap();
 
-        commands.entity(entity)
-            .remove::<ClientSync>();
+        commands.entity(entity).remove::<ClientSync>();
 
         next_state.set(AddRemoveSyncState::AddAgain);
     }
@@ -259,12 +257,11 @@ fn add_remove_sync_test() {
     fn add_again(
         mut commands: Commands,
         server_query: Query<Entity, With<ServerSharedId>>,
-        mut next_state: ResMut<NextState<AddRemoveSyncState>>
+        mut next_state: ResMut<NextState<AddRemoveSyncState>>,
     ) {
         let entity = server_query.single().unwrap();
 
-        commands.entity(entity)
-            .insert(ClientSync);
+        commands.entity(entity).insert(ClientSync);
 
         next_state.set(AddRemoveSyncState::CheckAddAgain);
     }

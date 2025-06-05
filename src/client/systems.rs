@@ -3,13 +3,7 @@ use bevy::{
     prelude::*,
 };
 
-use crate::{
-    client::components::*,
-    common::{
-        grid::GridPosition, index::unique::UniqueComponentIndex, ClientSyncStart, ClientSyncStop,
-        ClientSyncUpdate, EntityKind, SharedId,
-    },
-};
+use crate::client::components::Billboard;
 
 // todo: temporary hack. need a better approach than loading everything into a resource at startup eventually
 #[derive(Resource)]

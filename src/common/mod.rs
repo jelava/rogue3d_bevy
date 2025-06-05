@@ -2,12 +2,12 @@
 pub mod grid;
 pub mod index;
 
-use grid::SparseGridIndexPlugin;
-use index::unique::{UniqueComponentIndexPlugin, UniqueSparseComponentIndex};
+use bevy::{app::Plugin, math::IVec3, prelude::*};
 use uuid::Uuid;
 
-use bevy::{app::Plugin, math::IVec3, prelude::*};
+use crate::common::grid::SparseGridIndexPlugin;
 
+// Baseline parts of bridge plugin that are required for any version. Not intended to be used on its own
 struct BaseBridgePlugin;
 
 impl Plugin for BaseBridgePlugin {

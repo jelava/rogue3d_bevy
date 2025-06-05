@@ -1,4 +1,4 @@
-// todo: the current sight implementation is so barebones and hacky that 
+// todo: the current sight implementation is so barebones and hacky that
 
 #[test]
 #[ignore]

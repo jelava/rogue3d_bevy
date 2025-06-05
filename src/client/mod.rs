@@ -5,24 +5,18 @@ mod palettization;
 mod systems;
 
 use bevy::{
-    app::{Plugin, PreUpdate, Startup, Update},
+    app::{Plugin, Startup, Update},
     core_pipeline::tonemapping::Tonemapping,
     image::{ImageLoaderSettings, ImageSampler},
     prelude::*,
     window::{Window, WindowPlugin},
 };
-use client_sync::LocalClientSyncPlugin;
-use palettization::{PalettizationEffect, PalettizationPlugin};
 
-use crate::{
-    client::{
-        input::{systems::*, PlayerInputMap},
-        systems::*,
-    },
-    common::{
-        index::unique::{UniqueComponentIndexPlugin, UniqueSparseComponentIndex},
-        SharedId,
-    },
+use crate::client::{
+    client_sync::LocalClientSyncPlugin,
+    input::{systems::*, PlayerInputMap},
+    palettization::{PalettizationEffect, PalettizationPlugin},
+    systems::*,
 };
 
 // The shared baseline for both the local and (eventually) networked version of the client plugin
@@ -40,7 +34,6 @@ impl Plugin for BaseClientPlugin {
 
         app.add_plugins((default_plugins, PalettizationPlugin))
             .init_resource::<PlayerInputMap>()
-            // .add_systems(PreStartup, load_temp_asset_handles)
             .add_systems(Startup, spawn_camera)
             .add_systems(
                 Update,
@@ -49,8 +42,6 @@ impl Plugin for BaseClientPlugin {
                     (handle_camera_input, update_billboard_transforms).chain(),
                 ),
             );
-        // .add_observer(update_unsynced_material_color)
-        // .add_observer(update_resynced_material_color);
     }
 }
 

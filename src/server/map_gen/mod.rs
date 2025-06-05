@@ -1,10 +1,11 @@
-use bevy::{
-    math::IVec3,
-    prelude::{Component, Resource},
-};
+// use bevy::{
+//     math::IVec3,
+//     prelude::{Component, Resource},
+// };
 
 pub mod systems;
 
+/*
 #[derive(Resource)]
 pub struct FloorGenerationParams {
     floor_size: IVec3,
@@ -31,3 +32,4 @@ pub struct SimpleRoom {
     corner1: IVec3,
     corner2: IVec3,
 }
+*/
